@@ -12,6 +12,15 @@ CLAUDE.md helps but it's static, non-queryable, and becomes a dumping ground.
 
 An MCP server that gives Claude Code a queryable SQLite database of your project's architectural decisions. Decisions are saved during conversations and persist across sessions.
 
+## Why Use It
+
+- **Never re-explain decisions** — Claude remembers what you decided and why, across every session
+- **Queryable architectural history** — ask "why did we choose React?" and get the full rationale, alternatives, and trade-offs
+- **Knowledge that compounds** — every session builds on all previous ones; the more you use it, the more valuable it becomes
+- **Instant onboarding** — new team members query past decisions instead of digging through Slack threads
+- **Decision archaeology** — six months later, the "why" behind your codebase is one question away
+- **100% local and private** — SQLite on your machine, zero network calls, zero telemetry
+
 ## Quick Start
 
 ```bash
