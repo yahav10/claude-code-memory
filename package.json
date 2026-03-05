@@ -1,0 +1,48 @@
+{
+  "name": "claude-code-memory",
+  "version": "0.1.0",
+  "description": "Persistent project memory for Claude Code — track architectural decisions and query them conversationally",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "claude-code-memory": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "schema.sql",
+    "templates"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "serve": "node dist/server.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "mcp",
+    "memory",
+    "architectural-decisions",
+    "sqlite"
+  ],
+  "author": "Tom Yahav",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "better-sqlite3": "^11.0.0",
+    "commander": "^14.0.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
