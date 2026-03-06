@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0df2f2",
+                        "background-light": "#f5f8f8",
+                        "background-dark": "#102222",
+                        "accent-dark": "#1a3a3a",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .neon-border {
+            box-shadow: 0 0 10px rgba(13, 242, 242, 0.2);
+            border: 1px dashed #0df2f2;
+        }
+        .code-bg {
+            background: linear-gradient(135deg, #102222 0%, #0a1616 100%);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen">
+<div class="flex h-screen overflow-hidden">
+<!-- Sidebar -->
+<aside class="w-64 border-r border-primary/20 bg-background-light dark:bg-background-dark hidden md:flex flex-col">
+<div class="p-6 flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-3xl">database</span>
+<span class="font-bold text-xl tracking-tight">DATA<span class="text-primary">PORT</span></span>
+</div>
+<nav class="flex-1 px-4 space-y-2 mt-4">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-medium">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors" href="#">
+<span class="material-symbols-outlined">storage</span>
+<span class="font-medium">Databases</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg bg-primary/20 text-primary border border-primary/30" href="#">
+<span class="material-symbols-outlined">swap_horiz</span>
+<span class="font-medium">Import/Export</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-medium">Settings</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors" href="#">
+<span class="material-symbols-outlined">terminal</span>
+<span class="font-medium">System Logs</span>
+</a>
+</nav>
+<div class="p-6 border-t border-primary/10">
+<div class="flex items-center gap-3 bg-accent-dark/40 p-3 rounded-xl">
+<div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center border border-primary/40">
+<span class="material-symbols-outlined text-primary">person</span>
+</div>
+<div class="overflow-hidden">
+<p class="text-xs font-bold truncate">Admin User</p>
+<p class="text-[10px] text-slate-500 uppercase tracking-widest">v2.4.0-neon</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark">
+<!-- Header -->
+<header class="h-16 border-b border-primary/10 flex items-center justify-between px-8 sticky top-0 bg-background-dark/80 backdrop-blur-md z-10">
+<div class="flex items-center gap-4 flex-1">
+<div class="relative max-w-md w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">search</span>
+<input class="w-full bg-accent-dark/30 border border-primary/20 rounded-lg py-1.5 pl-10 pr-4 focus:ring-1 focus:ring-primary focus:border-primary outline-none text-sm" placeholder="Search operations..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+</div>
+</header>
+<div class="p-8 max-w-6xl mx-auto">
+<div class="mb-10">
+<h1 class="text-4xl font-black text-slate-100 mb-2">Data Portability</h1>
+<p class="text-slate-400">Migrate and extract your datasets with cryptographic integrity.</p>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+<!-- Export Section -->
+<section class="bg-accent-dark/20 border border-primary/10 rounded-xl p-6 flex flex-col h-full">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-primary bg-primary/10 p-2 rounded-lg">upload</span>
+<h2 class="text-xl font-bold">Export Dataset</h2>
+</div>
+<!-- Format Selector -->
+<div class="mb-6">
+<label class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 block">Output Format</label>
+<div class="grid grid-cols-3 gap-3">
+<button class="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-primary bg-primary/5 text-primary">
+<span class="material-symbols-outlined mb-1">data_object</span>
+<span class="text-xs font-bold tracking-widest">JSON</span>
+</button>
+<button class="flex flex-col items-center justify-center p-4 rounded-xl border border-primary/10 bg-accent-dark/30 text-slate-400 hover:border-primary/40 hover:text-slate-200 transition-all">
+<span class="material-symbols-outlined mb-1">markdown</span>
+<span class="text-xs font-bold tracking-widest">MD</span>
+</button>
+<button class="flex flex-col items-center justify-center p-4 rounded-xl border border-primary/10 bg-accent-dark/30 text-slate-400 hover:border-primary/40 hover:text-slate-200 transition-all">
+<span class="material-symbols-outlined mb-1">grid_on</span>
+<span class="text-xs font-bold tracking-widest">CSV</span>
+</button>
+</div>
+</div>
+<!-- Filters -->
+<div class="mb-6">
+<label class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 block">Filter Logic</label>
+<div class="flex flex-wrap gap-2">
+<button class="px-4 py-1.5 rounded-full bg-primary text-background-dark text-xs font-bold">All Records</button>
+<button class="px-4 py-1.5 rounded-full border border-primary/30 text-slate-300 text-xs font-bold hover:bg-primary/10">Active Only</button>
+<button class="px-4 py-1.5 rounded-full border border-primary/30 text-slate-300 text-xs font-bold hover:bg-primary/10">By Tag</button>
+<button class="px-4 py-1.5 rounded-full border border-primary/30 text-slate-300 text-xs font-bold hover:bg-primary/10">System Schema</button>
+</div>
+</div>
+<!-- Code Preview -->
+<div class="flex-1 mb-6">
+<label class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 block">Schema Preview</label>
+<div class="code-bg rounded-lg border border-primary/10 p-4 font-mono text-[11px] text-primary/80 overflow-hidden relative">
+<div class="absolute top-2 right-2 flex gap-1">
+<div class="w-2 h-2 rounded-full bg-red-500/40"></div>
+<div class="w-2 h-2 rounded-full bg-yellow-500/40"></div>
+<div class="w-2 h-2 rounded-full bg-green-500/40"></div>
+</div>
+<p><span class="text-purple-400">{</span></p>
+<p class="pl-4">"database": <span class="text-orange-300">"main_cluster"</span>,</p>
+<p class="pl-4">"export_id": <span class="text-primary">82910</span>,</p>
+<p class="pl-4">"records": <span class="text-purple-400">[</span></p>
+<p class="pl-8"><span class="text-purple-400">{</span> "id": 1, "status": "active" <span class="text-purple-400">}</span>,</p>
+<p class="pl-8"><span class="text-purple-400">{</span> "id": 2, "status": "idle" <span class="text-purple-400">}</span></p>
+<p class="pl-4"><span class="text-purple-400">]</span></p>
+<p><span class="text-purple-400">}</span></p>
+</div>
+</div>
+<button class="w-full bg-primary hover:bg-primary/90 text-background-dark font-black py-3 rounded-lg flex items-center justify-center gap-2 shadow-lg shadow-primary/10 transition-transform active:scale-[0.98]">
+<span class="material-symbols-outlined">download</span>
+                            INITIATE EXPORT
+                        </button>
+</section>
+<!-- Import Section -->
+<section class="bg-accent-dark/20 border border-primary/10 rounded-xl p-6 flex flex-col h-full">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-primary bg-primary/10 p-2 rounded-lg">download</span>
+<h2 class="text-xl font-bold">Import Dataset</h2>
+</div>
+<!-- Drag and Drop -->
+<div class="flex-1 neon-border rounded-xl bg-accent-dark/30 flex flex-col items-center justify-center p-12 mb-6 group cursor-pointer hover:bg-accent-dark/50 transition-colors">
+<div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary text-4xl">cloud_upload</span>
+</div>
+<p class="text-slate-100 font-bold mb-1">Drop archive here</p>
+<p class="text-slate-500 text-sm mb-4">or <span class="text-primary">browse files</span></p>
+<div class="flex gap-2">
+<span class="px-2 py-1 bg-background-dark text-[10px] text-slate-400 rounded border border-primary/20">.JSON</span>
+<span class="px-2 py-1 bg-background-dark text-[10px] text-slate-400 rounded border border-primary/20">.ZIP</span>
+<span class="px-2 py-1 bg-background-dark text-[10px] text-slate-400 rounded border border-primary/20">.CSV</span>
+</div>
+</div>
+<!-- Validation Preview -->
+<div class="mb-6">
+<label class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 block">Validation Status</label>
+<div class="bg-accent-dark/40 border border-primary/20 rounded-lg p-4">
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="text-sm font-medium text-slate-300">db_migration_v4.json</span>
+</div>
+<span class="text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded uppercase font-bold">Parsed</span>
+</div>
+<div class="space-y-3">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-green-500/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-green-500 text-sm">check_circle</span>
+</div>
+<div>
+<p class="text-xs font-bold text-slate-200">4 new decisions detected</p>
+<p class="text-[10px] text-slate-500">Schema version matches destination</p>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-yellow-500/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-yellow-500 text-sm">content_copy</span>
+</div>
+<div>
+<p class="text-xs font-bold text-slate-200">2 duplicates skipped</p>
+<p class="text-[10px] text-slate-500">ID collision detected in primary key</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<button class="w-full bg-transparent border border-primary text-primary hover:bg-primary/10 font-black py-3 rounded-lg flex items-center justify-center gap-2 transition-all">
+<span class="material-symbols-outlined">rocket_launch</span>
+                            EXECUTE MIGRATION
+                        </button>
+</section>
+</div>
+<!-- Recent History (Extra Generated Component) -->
+<div class="mt-12">
+<h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-6">Recent Operations</h3>
+<div class="bg-accent-dark/20 border border-primary/10 rounded-xl overflow-hidden">
+<table class="w-full text-left">
+<thead class="bg-accent-dark/30 border-b border-primary/10">
+<tr>
+<th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Type</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Source / Name</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Size</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Status</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest text-right">Date</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-primary/5">
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-6 py-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-sm">upload</span>
+<span class="text-sm font-medium">Export</span>
+</td>
+<td class="px-6 py-4">
+<p class="text-sm text-slate-200">customer_base_full.json</p>
+</td>
+<td class="px-6 py-4 text-sm text-slate-400">14.2 MB</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 rounded bg-green-500/10 text-green-500 text-[10px] font-bold uppercase">Success</span>
+</td>
+<td class="px-6 py-4 text-right text-xs text-slate-500">2 min ago</td>
+</tr>
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-6 py-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-sm">download</span>
+<span class="text-sm font-medium">Import</span>
+</td>
+<td class="px-6 py-4">
+<p class="text-sm text-slate-200">legacy_migration.zip</p>
+</td>
+<td class="px-6 py-4 text-sm text-slate-400">89.1 MB</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 rounded bg-yellow-500/10 text-yellow-500 text-[10px] font-bold uppercase">Warning</span>
+</td>
+<td class="px-6 py-4 text-right text-xs text-slate-500">1 hour ago</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

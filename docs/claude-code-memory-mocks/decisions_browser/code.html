@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Claude Code Memory - Decisions Browser</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0df2f2",
+                        "background-light": "#f5f8f8",
+                        "background-dark": "#102222",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-nav {
+            background-color: rgba(13, 242, 242, 0.1);
+            border-left: 3px solid #0df2f2;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display">
+<div class="flex h-screen overflow-hidden">
+<!-- Sidebar Navigation -->
+<aside class="w-64 flex-shrink-0 border-r border-primary/10 bg-background-light dark:bg-background-dark/50 flex flex-col">
+<div class="p-6 flex items-center gap-3">
+<div class="size-8 bg-primary rounded-lg flex items-center justify-center text-background-dark">
+<span class="material-symbols-outlined font-bold">memory</span>
+</div>
+<h1 class="font-bold text-lg tracking-tight">Claude Memory</h1>
+</div>
+<nav class="flex-1 px-3 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-primary/5 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-sm font-medium">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 active-nav text-primary rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1">gavel</span>
+<span class="text-sm font-medium">Decisions</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-primary/5 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">history</span>
+<span class="text-sm font-medium">Sessions</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-primary/5 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">swap_vert</span>
+<span class="text-sm font-medium">Import/Export</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-primary/5 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-sm font-medium">Settings</span>
+</a>
+</nav>
+<div class="p-4 border-t border-primary/10">
+<div class="flex items-center gap-3 p-2 rounded-lg bg-primary/5">
+<div class="size-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-sm">person</span>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-xs font-semibold truncate uppercase tracking-wider opacity-60">Architect Mode</p>
+<p class="text-xs truncate">v1.2.4-stable</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col overflow-hidden relative">
+<!-- Top Search Bar -->
+<header class="h-20 border-b border-primary/10 flex items-center px-8 gap-4 bg-background-light dark:bg-background-dark/80 backdrop-blur-md z-10">
+<div class="flex-1 relative group">
+<div class="absolute inset-y-0 left-4 flex items-center pointer-events-none text-primary/50 group-focus-within:text-primary transition-colors">
+<span class="material-symbols-outlined">search</span>
+</div>
+<input class="w-full bg-primary/5 border-primary/10 rounded-xl py-3 pl-12 pr-24 text-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all placeholder:text-slate-500" placeholder="Search Architectural Memory..." type="text"/>
+<div class="absolute inset-y-0 right-4 flex items-center pointer-events-none">
+<kbd class="px-2 py-1 rounded bg-background-dark dark:bg-slate-800 border border-primary/20 text-[10px] font-bold text-slate-400">CMD + K</kbd>
+</div>
+</div>
+<button class="size-10 rounded-full border border-primary/20 flex items-center justify-center hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined text-slate-400">notifications</span>
+</button>
+<div class="size-10 rounded-full bg-gradient-to-br from-primary to-blue-500 overflow-hidden border-2 border-primary/30" data-alt="User avatar profile picture">
+<img alt="Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB6OAixXYhUeKcGN5jCSeaAXuJUVWijwemQ3s3Kxgg4JX7Wo6tAVc2G5zLk7iqY3S_RRzhbAFqXzSMdl506iiOFidld3Z3NjFhg9A4tfMYS8aYjDR2rXG6yXyFKN3SBMcCRvaT7PsaCFU6YtGopLgC59gY-3029vqZofi22cNNeY-6inCnqB5HwvFPblnFszDbMC5vVZzw6eKF6srLhSdOh2e5PTRFxWQwzmozKz0DhP4eP_OGcty_1ifIm16lP65dn0u-ubo1nRfw"/>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<!-- Filter Sidebar -->
+<aside class="w-72 border-r border-primary/10 p-6 overflow-y-auto bg-primary/[0.02]">
+<div class="flex items-center justify-between mb-6">
+<h2 class="text-sm font-bold uppercase tracking-widest text-primary/70">Filters</h2>
+<button class="text-xs text-primary hover:underline">Clear all</button>
+</div>
+<!-- Status Filter -->
+<div class="mb-8">
+<h3 class="text-xs font-semibold mb-4 text-slate-500 uppercase">Status</h3>
+<div class="space-y-3">
+<label class="flex items-center gap-3 cursor-pointer group">
+<input checked="" class="rounded border-primary/30 bg-transparent text-primary focus:ring-primary focus:ring-offset-background-dark h-4 w-4" type="checkbox"/>
+<span class="text-sm group-hover:text-primary transition-colors">Active</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="rounded border-primary/30 bg-transparent text-primary focus:ring-primary focus:ring-offset-background-dark h-4 w-4" type="checkbox"/>
+<span class="text-sm group-hover:text-primary transition-colors">Deprecated</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="rounded border-primary/30 bg-transparent text-primary focus:ring-primary focus:ring-offset-background-dark h-4 w-4" type="checkbox"/>
+<span class="text-sm group-hover:text-primary transition-colors">Superseded</span>
+</label>
+</div>
+</div>
+<!-- Tags Filter -->
+<div class="mb-8">
+<h3 class="text-xs font-semibold mb-4 text-slate-500 uppercase">Tags</h3>
+<div class="flex flex-wrap gap-2">
+<button class="px-2 py-1 rounded border border-primary/20 bg-primary/10 text-[10px] font-medium text-primary uppercase">Database</button>
+<button class="px-2 py-1 rounded border border-primary/10 hover:border-primary/40 text-[10px] font-medium text-slate-400 uppercase">Architecture</button>
+<button class="px-2 py-1 rounded border border-primary/20 bg-primary/10 text-[10px] font-medium text-primary uppercase">Performance</button>
+<button class="px-2 py-1 rounded border border-primary/10 hover:border-primary/40 text-[10px] font-medium text-slate-400 uppercase">MCP</button>
+<button class="px-2 py-1 rounded border border-primary/10 hover:border-primary/40 text-[10px] font-medium text-slate-400 uppercase">Security</button>
+<button class="px-2 py-1 rounded border border-primary/10 hover:border-primary/40 text-[10px] font-medium text-slate-400 uppercase">UI/UX</button>
+</div>
+</div>
+<!-- Date Range -->
+<div>
+<h3 class="text-xs font-semibold mb-4 text-slate-500 uppercase">Date Range</h3>
+<div class="space-y-3">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-500">calendar_today</span>
+<input class="w-full bg-primary/5 border-primary/10 rounded-lg py-2 pl-10 pr-4 text-xs focus:ring-primary" placeholder="Start date" type="text"/>
+</div>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-500">event</span>
+<input class="w-full bg-primary/5 border-primary/10 rounded-lg py-2 pl-10 pr-4 text-xs focus:ring-primary" placeholder="End date" type="text"/>
+</div>
+</div>
+</div>
+</aside>
+<!-- Data Table Container -->
+<section class="flex-1 flex flex-col overflow-hidden bg-background-light dark:bg-background-dark">
+<div class="flex-1 overflow-auto">
+<table class="w-full text-left border-collapse min-w-[800px]">
+<thead class="sticky top-0 bg-background-light dark:bg-background-dark/90 backdrop-blur-sm z-10 border-b border-primary/10">
+<tr>
+<th class="py-4 px-6 w-12">
+<input class="rounded border-primary/30 bg-transparent text-primary focus:ring-primary h-4 w-4" type="checkbox"/>
+</th>
+<th class="py-4 px-4 text-xs font-bold uppercase tracking-wider text-slate-500">Title</th>
+<th class="py-4 px-4 text-xs font-bold uppercase tracking-wider text-slate-500">Status</th>
+<th class="py-4 px-4 text-xs font-bold uppercase tracking-wider text-slate-500">Tags</th>
+<th class="py-4 px-4 text-xs font-bold uppercase tracking-wider text-slate-500">Date</th>
+<th class="py-4 px-4 text-xs font-bold uppercase tracking-wider text-slate-500">Session ID</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-primary/5">
+<!-- Row 1 -->
+<tr class="hover:bg-primary/5 group transition-colors cursor-pointer">
+<td class="py-4 px-6">
+<input checked="" class="rounded border-primary/30 bg-transparent text-primary focus:ring-primary h-4 w-4" type="checkbox"/>
+</td>
+<td class="py-4 px-4">
+<p class="text-sm font-semibold group-hover:text-primary">Switch to SQLite WAL mode</p>
+<p class="text-xs text-slate-500 mt-1">Improves write performance significantly...</p>
+</td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+                                            Active
+                                        </span>
+</td>
+<td class="py-4 px-4">
+<div class="flex gap-2">
+<span class="text-[10px] bg-slate-800 border border-slate-700 px-1.5 py-0.5 rounded text-slate-300">Database</span>
+<span class="text-[10px] bg-slate-800 border border-slate-700 px-1.5 py-0.5 rounded text-slate-300">Perf</span>
+</div>
+</td>
+<td class="py-4 px-4 text-sm text-slate-400">Oct 24, 2023</td>
+<td class="py-4 px-4 text-sm font-mono text-slate-500">#4f2a9d</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-primary/5 group transition-colors cursor-pointer">
+<td class="py-4 px-6">
+<input checked="" class="rounded border-primary/30 bg-transparent text-primary focus:ring-primary h-4 w-4" type="checkbox"/>
+</td>
+<td class="py-4 px-4">
+<p class="text-sm font-semibold group-hover:text-primary">Implement retry logic for MCP</p>
+<p class="text-xs text-slate-500 mt-1">Exponential backoff for tool calls</p>
+</td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+                                            Active
+                                        </span>
+</td>
+<td class="py-4 px-4">
+<div class="flex gap-2">
+<span class="text-[10px] bg-slate-800 border border-slate-700 px-1.5 py-0.5 rounded text-slate-300">MCP</span>
+<span class="text-[10px] bg-slate-800 border border-slate-700 px-1.5 py-0.5 rounded text-slate-300">Core</span>
+</div>
+</td>
+<td class="py-4 px-4 text-sm text-slate-400">Oct 22, 2023</td>
+<td class="py-4 px-4 text-sm font-mono text-slate-500">#8e11bc</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-primary/5 group transition-colors cursor-pointer">
+<td class="py-4 px-6">
+<input checked="" class="rounded border-primary/30 bg-transparent text-primary focus:ring-primary h-4 w-4" type="checkbox"/>
+</td>
+<td class="py-4 px-4">
+<p class="text-sm font-semibold group-hover:text-primary">Refactor query router</p>
+<p class="text-xs text-slate-500 mt-1">Unified routing logic for all plugins</p>
+</td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-500/10 text-orange-400 border border-orange-500/20">
+                                            Superseded
+                                        </span>
+</td>
+<td class="py-4 px-4">
+<div class="flex gap-2">
+<span class="text-[10px] bg-slate-800 border border-slate-700 px-1.5 py-0.5 rounded text-slate-300">Arch</span>
+</div>
+</td>
+<td class="py-4 px-4 text-sm text-slate-400">Oct 15, 2023</td>
+<td class="py-4 px-4 text-sm font-mono text-slate-500">#a119ff</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-primary/5 group transition-colors cursor-pointer">
+<td class="py-4 px-6">
+<input class="rounded border-primary/30 bg-transparent text-primary focus:ring-primary h-4 w-4" type="checkbox"/>
+</td>
+<td class="py-4 px-4">
+<p class="text-sm font-semibold group-hover:text-primary">Legacy Auth Handler removal</p>
+<p class="text-xs text-slate-500 mt-1">Clean up after v2 migration</p>
+</td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20">
+                                            Deprecated
+                                        </span>
+</td>
+<td class="py-4 px-4">
+<div class="flex gap-2">
+<span class="text-[10px] bg-slate-800 border border-slate-700 px-1.5 py-0.5 rounded text-slate-300">Security</span>
+</div>
+</td>
+<td class="py-4 px-4 text-sm text-slate-400">Sep 30, 2023</td>
+<td class="py-4 px-4 text-sm font-mono text-slate-500">#bc9201</td>
+</tr>
+</tbody>
+</table>
+<!-- Empty State (Subtle) -->
+<div class="flex flex-col items-center justify-center py-24 px-4 text-center opacity-40">
+<span class="material-symbols-outlined text-6xl mb-4 text-primary">cloud_off</span>
+<h3 class="text-lg font-bold">No decisions found</h3>
+<p class="text-sm max-w-md mx-auto mt-2">Try a different query or start a conversation in Claude Code to create new architectural memories.</p>
+</div>
+</div>
+<!-- Bulk Actions Bar -->
+<div class="h-16 border-t border-primary/20 bg-primary/10 backdrop-blur-md flex items-center justify-between px-8">
+<div class="flex items-center gap-4">
+<span class="text-sm font-bold text-primary">3 items selected</span>
+<div class="h-4 w-px bg-primary/30"></div>
+<div class="flex gap-2">
+<button class="flex items-center gap-2 px-3 py-1.5 rounded bg-primary text-background-dark text-xs font-bold hover:brightness-110 transition-all">
+<span class="material-symbols-outlined text-sm">export_notes</span> Export
+                                </button>
+<button class="flex items-center gap-2 px-3 py-1.5 rounded bg-primary/20 border border-primary/30 text-primary text-xs font-bold hover:bg-primary/30 transition-all">
+<span class="material-symbols-outlined text-sm">update</span> Update Status
+                                </button>
+<button class="flex items-center gap-2 px-3 py-1.5 rounded bg-red-500/20 border border-red-500/30 text-red-400 text-xs font-bold hover:bg-red-500/30 transition-all">
+<span class="material-symbols-outlined text-sm">delete</span> Delete
+                                </button>
+</div>
+</div>
+<div class="flex items-center gap-4 text-xs text-slate-500">
+<span>Showing 4 of 128 memories</span>
+<div class="flex gap-1">
+<button class="size-6 flex items-center justify-center border border-primary/10 rounded hover:bg-primary/10"><span class="material-symbols-outlined text-sm">chevron_left</span></button>
+<button class="size-6 flex items-center justify-center border border-primary/30 rounded bg-primary/10 text-primary">1</button>
+<button class="size-6 flex items-center justify-center border border-primary/10 rounded hover:bg-primary/10">2</button>
+<button class="size-6 flex items-center justify-center border border-primary/10 rounded hover:bg-primary/10"><span class="material-symbols-outlined text-sm">chevron_right</span></button>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+</div>
+</body></html>

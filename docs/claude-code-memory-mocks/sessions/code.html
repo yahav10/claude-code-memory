@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Claude Code - Session History</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0df2f2",
+                        "background-light": "#f5f8f8",
+                        "background-dark": "#102222",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .neon-glow { box-shadow: 0 0 15px rgba(13, 242, 242, 0.3); }
+        .neon-border { border-color: rgba(13, 242, 242, 0.5); }
+        .timeline-line::before {
+            content: '';
+            position: absolute;
+            left: 7px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: rgba(13, 242, 242, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 antialiased">
+<div class="relative flex h-screen w-full overflow-hidden">
+<!-- Sidebar Navigation -->
+<aside class="flex w-64 flex-col border-r border-slate-200 dark:border-primary/10 bg-white dark:bg-background-dark/50">
+<div class="flex flex-col h-full p-4 gap-6">
+<div class="flex items-center gap-3 px-2">
+<div class="size-10 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30">
+<span class="material-symbols-outlined text-primary">terminal</span>
+</div>
+<div class="flex flex-col">
+<h1 class="text-slate-900 dark:text-white text-base font-bold leading-none">Claude Code</h1>
+<p class="text-slate-500 dark:text-primary/60 text-xs mt-1">v1.2.0-beta</p>
+</div>
+</div>
+<nav class="flex flex-col gap-1 grow">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-primary/10 transition-colors" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<p class="text-sm font-medium">Dashboard</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary border border-primary/20 neon-glow" href="#">
+<span class="material-symbols-outlined">history</span>
+<p class="text-sm font-medium">Sessions</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-primary/10 transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<p class="text-sm font-medium">Settings</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-primary/10 transition-colors" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+<p class="text-sm font-medium">Docs</p>
+</a>
+</nav>
+<div class="mt-auto pt-4 border-t border-slate-200 dark:border-primary/10">
+<button class="w-full flex items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-background-dark text-sm font-bold neon-glow hover:brightness-110 transition-all">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                        New Session
+                    </button>
+<button class="w-full mt-2 flex items-center gap-3 px-3 py-2 rounded-lg text-slate-500 dark:text-slate-400 hover:text-red-500 transition-colors">
+<span class="material-symbols-outlined">logout</span>
+<p class="text-sm font-medium">Logout</p>
+</button>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col overflow-y-auto">
+<!-- Header -->
+<header class="flex items-center justify-between border-b border-slate-200 dark:border-primary/10 px-8 py-4 sticky top-0 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md z-10">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">history</span>
+<h2 class="text-slate-900 dark:text-white text-xl font-bold tracking-tight">Session History</h2>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
+<input class="bg-slate-100 dark:bg-primary/5 border border-slate-200 dark:border-primary/20 rounded-lg pl-9 pr-4 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary w-64" placeholder="Search sessions..." type="text"/>
+</div>
+<button class="p-2 rounded-lg border border-slate-200 dark:border-primary/20 text-slate-600 dark:text-slate-400">
+<span class="material-symbols-outlined">filter_list</span>
+</button>
+</div>
+</header>
+<div class="p-8 max-w-6xl mx-auto w-full">
+<!-- Stats Row -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+<div class="bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/10 p-5 rounded-xl">
+<p class="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider">Total Sessions</p>
+<div class="flex items-end justify-between mt-2">
+<h3 class="text-3xl font-black text-slate-900 dark:text-white leading-none">128</h3>
+<span class="text-green-500 text-xs font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">trending_up</span> +12%
+                            </span>
+</div>
+</div>
+<div class="bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/10 p-5 rounded-xl">
+<p class="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider">Avg Decisions</p>
+<div class="flex items-end justify-between mt-2">
+<h3 class="text-3xl font-black text-slate-900 dark:text-white leading-none">12.4</h3>
+<span class="text-red-400 text-xs font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">trending_down</span> -2%
+                            </span>
+</div>
+</div>
+<div class="bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/10 p-5 rounded-xl">
+<p class="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider">Success Rate</p>
+<div class="flex items-end justify-between mt-2">
+<h3 class="text-3xl font-black text-slate-900 dark:text-white leading-none">98.2%</h3>
+<span class="text-green-500 text-xs font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">trending_up</span> +0.5%
+                            </span>
+</div>
+</div>
+</div>
+<!-- Session List -->
+<div class="space-y-4">
+<!-- Expanded Session Card -->
+<div class="bg-white dark:bg-primary/5 border-2 border-primary/40 rounded-xl overflow-hidden neon-glow shadow-xl shadow-primary/5">
+<div class="p-6 border-b border-slate-200 dark:border-primary/10 flex flex-wrap items-start justify-between gap-4">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<h4 class="text-lg font-bold text-slate-900 dark:text-white">Session #8e2b-45f1</h4>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-primary/20 text-primary border border-primary/30 uppercase tracking-widest">Active</span>
+</div>
+<div class="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">calendar_today</span> Oct 24, 2023</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">schedule</span> 10:15 AM - 11:30 AM</span>
+<span class="flex items-center gap-1 text-primary"><span class="material-symbols-outlined text-sm">data_object</span> 15 Decisions</span>
+</div>
+<p class="text-sm text-slate-600 dark:text-slate-300 italic mt-2">"Successfully implemented server-side caching and refactored the main query router for 20% latency improvement."</p>
+</div>
+<div class="flex flex-col items-end gap-3">
+<div class="flex gap-2">
+<span class="px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-semibold text-slate-600 dark:text-slate-400">CORE</span>
+<span class="px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-semibold text-slate-600 dark:text-slate-400">ROUTER</span>
+</div>
+<div class="flex h-2 w-32 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 70%;"></div>
+<div class="h-full bg-primary/40" style="width: 30%;"></div>
+</div>
+</div>
+</div>
+<!-- Timeline Section -->
+<div class="p-6 bg-slate-50/50 dark:bg-black/20">
+<h5 class="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">analytics</span> Decision Timeline
+                            </h5>
+<div class="space-y-6 relative timeline-line">
+<div class="relative pl-8">
+<div class="absolute left-0 top-1.5 size-4 rounded-full bg-primary border-4 border-background-dark"></div>
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-primary uppercase">10:15 AM</span>
+<p class="text-sm font-semibold dark:text-white">Initialized MCP server</p>
+<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Established secure connection to context providers and loaded schema definitions.</p>
+</div>
+</div>
+<div class="relative pl-8">
+<div class="absolute left-0 top-1.5 size-4 rounded-full bg-primary/40 border-4 border-background-dark"></div>
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-primary/70 uppercase">10:22 AM</span>
+<p class="text-sm font-semibold dark:text-white">Refactored query router</p>
+<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Optimized path matching logic in `src/router/internal.ts` for improved performance.</p>
+</div>
+</div>
+<div class="relative pl-8">
+<div class="absolute left-0 top-1.5 size-4 rounded-full bg-primary/20 border-4 border-background-dark"></div>
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-primary/50 uppercase">10:45 AM</span>
+<p class="text-sm font-semibold dark:text-white">Implemented retry logic</p>
+<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Added exponential backoff for external API calls to enhance system resilience.</p>
+</div>
+</div>
+</div>
+<div class="mt-6 flex justify-center">
+<button class="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+                                    View 12 more decisions <span class="material-symbols-outlined text-sm">expand_more</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Regular Session Card -->
+<div class="bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/10 rounded-xl p-6 hover:border-primary/30 transition-all cursor-pointer group">
+<div class="flex flex-wrap items-start justify-between gap-4">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<h4 class="text-lg font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">Session #a3f9-22c4</h4>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 uppercase tracking-widest">Completed</span>
+</div>
+<div class="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">calendar_today</span> Oct 23, 2023</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">schedule</span> 02:45 PM - 03:12 PM</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">data_object</span> 8 Decisions</span>
+</div>
+<p class="text-sm text-slate-600 dark:text-slate-300 italic mt-2 line-clamp-1">"Integrated OAuth2 flow with GitHub provider and secured the callback endpoints."</p>
+</div>
+<div class="flex flex-col items-end gap-3">
+<div class="flex gap-2">
+<span class="px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-semibold text-slate-600 dark:text-slate-400">AUTH</span>
+<span class="px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-semibold text-slate-600 dark:text-slate-400">API</span>
+</div>
+<div class="flex items-center gap-1 text-slate-400 dark:text-slate-500">
+<span class="material-symbols-outlined">chevron_right</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Regular Session Card -->
+<div class="bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/10 rounded-xl p-6 hover:border-primary/30 transition-all cursor-pointer group">
+<div class="flex flex-wrap items-start justify-between gap-4">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<h4 class="text-lg font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">Session #c4d1-9922</h4>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 uppercase tracking-widest">Completed</span>
+</div>
+<div class="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">calendar_today</span> Oct 22, 2023</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">schedule</span> 09:00 AM - 10:45 AM</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">data_object</span> 24 Decisions</span>
+</div>
+<p class="text-sm text-slate-600 dark:text-slate-300 italic mt-2 line-clamp-1">"Comprehensive database schema migration from legacy SQL to modern document-based storage."</p>
+</div>
+<div class="flex flex-col items-end gap-3">
+<div class="flex gap-2">
+<span class="px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-semibold text-slate-600 dark:text-slate-400">DATABASE</span>
+<span class="px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-semibold text-slate-600 dark:text-slate-400">MIGRATION</span>
+</div>
+<div class="flex items-center gap-1 text-slate-400 dark:text-slate-500">
+<span class="material-symbols-outlined">chevron_right</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Tag Distribution Chart Section (Visual Component) -->
+<div class="mt-12">
+<h2 class="text-slate-900 dark:text-white text-lg font-bold mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">pie_chart</span> Global Activity Distribution
+                    </h2>
+<div class="bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/10 rounded-xl p-8">
+<div class="flex flex-col md:flex-row items-center gap-12">
+<div class="relative size-48">
+<svg class="size-full transform -rotate-90" viewbox="0 0 100 100">
+<!-- Donut Chart Segments -->
+<circle cx="50" cy="50" fill="transparent" r="40" stroke="rgba(13, 242, 242, 0.1)" stroke-width="12"></circle>
+<circle class="neon-glow" cx="50" cy="50" fill="transparent" r="40" stroke="#0df2f2" stroke-dasharray="251.2" stroke-dashoffset="100.48" stroke-width="12"></circle>
+<circle cx="50" cy="50" fill="transparent" opacity="0.4" r="40" stroke="#0df2f2" stroke-dasharray="251.2" stroke-dashoffset="200.96" stroke-width="12"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="text-2xl font-black dark:text-white leading-none">64%</span>
+<span class="text-[10px] font-bold text-slate-400 uppercase">Core</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-x-12 gap-y-4 flex-1">
+<div class="flex items-center gap-3">
+<div class="size-3 rounded-full bg-primary neon-glow"></div>
+<div class="flex flex-col">
+<span class="text-sm font-bold dark:text-white">Core Development</span>
+<span class="text-xs text-slate-500">64 Sessions (50.2%)</span>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="size-3 rounded-full bg-primary/60"></div>
+<div class="flex flex-col">
+<span class="text-sm font-bold dark:text-white">Auth &amp; Security</span>
+<span class="text-xs text-slate-500">32 Sessions (25.0%)</span>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="size-3 rounded-full bg-primary/30"></div>
+<div class="flex flex-col">
+<span class="text-sm font-bold dark:text-white">API Integration</span>
+<span class="text-xs text-slate-500">20 Sessions (15.6%)</span>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="size-3 rounded-full bg-slate-700"></div>
+<div class="flex flex-col">
+<span class="text-sm font-bold dark:text-white">Database</span>
+<span class="text-xs text-slate-500">12 Sessions (9.2%)</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Spacer -->
+<div class="h-20"></div>
+</main>
+</div>
+</body></html>

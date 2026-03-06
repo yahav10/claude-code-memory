@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Claude Code Memory - Developer Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0df2f2",
+                        "background-light": "#f5f8f8",
+                        "background-dark": "#102222",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .cyber-border {
+            border: 1px solid rgba(13, 242, 242, 0.2);
+        }
+        .neon-glow {
+            box-shadow: 0 0 15px rgba(13, 242, 242, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 antialiased min-h-screen flex">
+<!-- Sidebar -->
+<aside class="w-64 border-r border-slate-200 dark:border-primary/20 flex flex-col bg-background-light dark:bg-background-dark/50 backdrop-blur-md sticky top-0 h-screen">
+<div class="p-6 flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/40">
+<span class="material-symbols-outlined text-primary text-2xl">memory</span>
+</div>
+<div>
+<h1 class="text-sm font-bold tracking-tight text-slate-900 dark:text-white uppercase">Claude Code</h1>
+<p class="text-[10px] text-primary font-medium tracking-widest uppercase opacity-70">Memory Engine</p>
+</div>
+</div>
+<nav class="flex-1 px-4 space-y-1 mt-4">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary text-background-dark font-semibold" href="#">
+<span class="material-symbols-outlined text-[20px] fill-1">dashboard</span>
+<span class="text-sm">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-all" href="#">
+<span class="material-symbols-outlined text-[20px]">psychology</span>
+<span class="text-sm">Decisions</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-all" href="#">
+<span class="material-symbols-outlined text-[20px]">history</span>
+<span class="text-sm">Sessions</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-all" href="#">
+<span class="material-symbols-outlined text-[20px]">swap_horiz</span>
+<span class="text-sm">Import/Export</span>
+</a>
+<div class="pt-4 mt-4 border-t border-slate-200 dark:border-primary/10">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-all" href="#">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<span class="text-sm">Settings</span>
+</a>
+</div>
+</nav>
+<div class="p-4 border-t border-slate-200 dark:border-primary/10">
+<div class="bg-primary/5 rounded-xl p-4 cyber-border">
+<p class="text-[11px] text-slate-400 mb-2 uppercase tracking-tighter">System Status</p>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]"></div>
+<span class="text-xs font-medium text-slate-200">Neural Sync Active</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 p-8 overflow-y-auto">
+<!-- Header Section -->
+<header class="flex justify-between items-center mb-8">
+<div>
+<h2 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">System Overview</h2>
+<p class="text-slate-500 dark:text-slate-400 text-sm">Welcome back, dev. Your context memory is synchronized.</p>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-lg border border-slate-200 dark:border-primary/20 hover:bg-primary/5 transition-colors">
+<span class="material-symbols-outlined text-slate-600 dark:text-slate-400">notifications</span>
+</button>
+<div class="h-10 w-10 rounded-full border-2 border-primary overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Developer profile picture avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA4z_Alam_b0kdH8tXBtBcWjWHNB3ydeQS5qZbF_7a9rEfpgtGAqfMfROYkbNAtyJHA6T3xZrihgip_VLjMVTWWx9tVJiBHPs6qm6zQPK7Die0j2KaR_W68LgqJvvRAyLd-Y0lZUbenD9ZnLwdKcnw_lVti6p-5KtjI7P9dT52mju4yxFT49AA2qZIWUa7IeGJocjnz1o-_n4B9qXq5NjSdfDl6vrM7d1wmEcCkZ614adidW4ijvGSQEpuSDRsBSTCpKullOd4Jbbc"/>
+</div>
+</div>
+</header>
+<!-- Stats Row -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+<div class="bg-white dark:bg-background-dark/40 p-5 rounded-xl cyber-border neon-glow">
+<p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">Total Decisions</p>
+<div class="flex items-end justify-between">
+<h3 class="text-3xl font-bold text-slate-900 dark:text-white">142</h3>
+<span class="text-emerald-500 text-xs font-bold mb-1">+12%</span>
+</div>
+</div>
+<div class="bg-white dark:bg-background-dark/40 p-5 rounded-xl cyber-border neon-glow">
+<p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">Active</p>
+<div class="flex items-end justify-between">
+<h3 class="text-3xl font-bold text-slate-900 dark:text-white">98</h3>
+<span class="material-symbols-outlined text-primary">analytics</span>
+</div>
+</div>
+<div class="bg-white dark:bg-background-dark/40 p-5 rounded-xl cyber-border neon-glow">
+<p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">Sessions</p>
+<div class="flex items-end justify-between">
+<h3 class="text-3xl font-bold text-slate-900 dark:text-white">42</h3>
+<span class="material-symbols-outlined text-primary">terminal</span>
+</div>
+</div>
+<div class="bg-white dark:bg-background-dark/40 p-5 rounded-xl cyber-border neon-glow">
+<p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">Last Activity</p>
+<div class="flex items-end justify-between">
+<h3 class="text-3xl font-bold text-slate-900 dark:text-white text-primary">2h ago</h3>
+<span class="material-symbols-outlined text-primary">schedule</span>
+</div>
+</div>
+</div>
+<!-- Middle Row -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+<!-- Activity Timeline (Left 2/3) -->
+<div class="lg:col-span-2 bg-white dark:bg-background-dark/40 rounded-xl cyber-border p-6 flex flex-col">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-bold text-lg text-slate-900 dark:text-white">Activity Timeline</h3>
+<select class="bg-background-dark/60 border-primary/20 rounded text-xs text-primary focus:ring-primary">
+<option>Last 7 Days</option>
+<option>Last 30 Days</option>
+</select>
+</div>
+<div class="flex-1 min-h-[220px] relative">
+<svg class="w-full h-full" preserveaspectratio="none" viewbox="0 0 800 200">
+<defs>
+<lineargradient id="areaGradient" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#0df2f2" stop-opacity="0.3"></stop>
+<stop offset="100%" stop-color="#0df2f2" stop-opacity="0"></stop>
+</lineargradient>
+</defs>
+<path d="M0,150 Q50,130 100,160 T200,100 T300,120 T400,60 T500,80 T600,40 T700,70 T800,50 V200 H0 Z" fill="url(#areaGradient)"></path>
+<path class="drop-shadow-[0_0_8px_rgba(13,242,242,0.8)]" d="M0,150 Q50,130 100,160 T200,100 T300,120 T400,60 T500,80 T600,40 T700,70 T800,50" fill="none" stroke="#0df2f2" stroke-width="3"></path>
+<!-- Grid lines for aesthetic -->
+<line class="text-slate-800/10 dark:text-white/5" stroke="currentColor" stroke-dasharray="4" x1="0" x2="800" y1="50" y2="50"></line>
+<line class="text-slate-800/10 dark:text-white/5" stroke="currentColor" stroke-dasharray="4" x1="0" x2="800" y1="100" y2="100"></line>
+<line class="text-slate-800/10 dark:text-white/5" stroke="currentColor" stroke-dasharray="4" x1="0" x2="800" y1="150" y2="150"></line>
+</svg>
+<div class="flex justify-between mt-4 text-[10px] font-medium text-slate-400 tracking-tighter uppercase px-2">
+<span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+</div>
+</div>
+</div>
+<!-- Quick Actions (Right 1/3) -->
+<div class="bg-white dark:bg-background-dark/40 rounded-xl cyber-border p-6">
+<h3 class="font-bold text-lg text-slate-900 dark:text-white mb-6">Quick Actions</h3>
+<div class="space-y-4">
+<button class="w-full bg-primary hover:bg-primary/90 text-background-dark font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all shadow-[0_0_20px_rgba(13,242,242,0.2)]">
+<span class="material-symbols-outlined">download</span>
+                        Export Context
+                    </button>
+<button class="w-full bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all">
+<span class="material-symbols-outlined">upload</span>
+                        Import Memory
+                    </button>
+<div class="mt-8 p-4 rounded-lg bg-background-dark/80 border border-primary/10">
+<h4 class="text-xs font-bold text-slate-400 uppercase mb-3">Backup Status</h4>
+<div class="flex items-center justify-between text-sm">
+<span class="text-slate-200">Auto-backup</span>
+<span class="text-primary">Enabled</span>
+</div>
+<div class="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
+<div class="bg-primary h-full w-3/4 rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Row -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Recent Decisions (Left 2/3) -->
+<div class="lg:col-span-2 bg-white dark:bg-background-dark/40 rounded-xl cyber-border overflow-hidden">
+<div class="p-6 border-b border-slate-200 dark:border-primary/10 flex justify-between items-center">
+<h3 class="font-bold text-lg text-slate-900 dark:text-white">Recent Decisions</h3>
+<a class="text-xs text-primary hover:underline font-medium" href="#">View all history</a>
+</div>
+<div class="divide-y divide-slate-200 dark:divide-primary/10">
+<!-- Item 1 -->
+<div class="p-4 hover:bg-primary/5 transition-colors flex items-center justify-between group">
+<div class="flex items-center gap-4">
+<div class="p-2 rounded bg-background-dark/60 text-primary cyber-border">
+<span class="material-symbols-outlined">verified_user</span>
+</div>
+<div>
+<h4 class="text-sm font-semibold text-slate-900 dark:text-white">Use JWT for Auth</h4>
+<div class="flex gap-2 mt-1">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary uppercase">#auth</span>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary uppercase">#security</span>
+</div>
+</div>
+</div>
+<div class="text-right">
+<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 uppercase">Active</span>
+<p class="text-[10px] text-slate-500 mt-1 uppercase font-medium">1h ago</p>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="p-4 hover:bg-primary/5 transition-colors flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="p-2 rounded bg-background-dark/60 text-primary cyber-border">
+<span class="material-symbols-outlined">database</span>
+</div>
+<div>
+<h4 class="text-sm font-semibold text-slate-900 dark:text-white">Migrate to Postgres 16</h4>
+<div class="flex gap-2 mt-1">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary uppercase">#database</span>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary uppercase">#infra</span>
+</div>
+</div>
+</div>
+<div class="text-right">
+<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 uppercase">Active</span>
+<p class="text-[10px] text-slate-500 mt-1 uppercase font-medium">4h ago</p>
+</div>
+</div>
+<!-- Item 3 -->
+<div class="p-4 hover:bg-primary/5 transition-colors flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="p-2 rounded bg-background-dark/60 text-primary cyber-border">
+<span class="material-symbols-outlined">api</span>
+</div>
+<div>
+<h4 class="text-sm font-semibold text-slate-900 dark:text-white">Implement Rate Limiting</h4>
+<div class="flex gap-2 mt-1">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary uppercase">#api</span>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary uppercase">#backend</span>
+</div>
+</div>
+</div>
+<div class="text-right">
+<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 uppercase">Active</span>
+<p class="text-[10px] text-slate-500 mt-1 uppercase font-medium">Yesterday</p>
+</div>
+</div>
+<!-- Item 4 -->
+<div class="p-4 hover:bg-primary/5 transition-colors flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="p-2 rounded bg-background-dark/60 text-primary cyber-border">
+<span class="material-symbols-outlined">palette</span>
+</div>
+<div>
+<h4 class="text-sm font-semibold text-slate-900 dark:text-white">Switch to Tailwind v4</h4>
+<div class="flex gap-2 mt-1">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary uppercase">#ui</span>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary uppercase">#frontend</span>
+</div>
+</div>
+</div>
+<div class="text-right">
+<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 uppercase">Active</span>
+<p class="text-[10px] text-slate-500 mt-1 uppercase font-medium">2 days ago</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Top Tags (Right 1/3) -->
+<div class="bg-white dark:bg-background-dark/40 rounded-xl cyber-border p-6">
+<h3 class="font-bold text-lg text-slate-900 dark:text-white mb-6">Top Context Tags</h3>
+<div class="space-y-6">
+<div>
+<div class="flex justify-between items-center mb-2">
+<span class="text-sm font-medium text-slate-300">#database</span>
+<span class="text-sm text-primary font-bold">22</span>
+</div>
+<div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[70%] rounded-full shadow-[0_0_8px_rgba(13,242,242,0.6)]"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between items-center mb-2">
+<span class="text-sm font-medium text-slate-300">#api</span>
+<span class="text-sm text-primary font-bold">18</span>
+</div>
+<div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[60%] rounded-full shadow-[0_0_8px_rgba(13,242,242,0.6)]"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between items-center mb-2">
+<span class="text-sm font-medium text-slate-300">#ui</span>
+<span class="text-sm text-primary font-bold">15</span>
+</div>
+<div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[50%] rounded-full shadow-[0_0_8px_rgba(13,242,242,0.6)]"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between items-center mb-2">
+<span class="text-sm font-medium text-slate-300">#security</span>
+<span class="text-sm text-primary font-bold">12</span>
+</div>
+<div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[40%] rounded-full shadow-[0_0_8px_rgba(13,242,242,0.6)]"></div>
+</div>
+</div>
+</div>
+<div class="mt-8">
+<button class="text-xs text-primary font-bold uppercase tracking-widest flex items-center gap-2 hover:opacity-80">
+                        Manage all tags
+                        <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+</body></html>
