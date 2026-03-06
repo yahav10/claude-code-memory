@@ -114,4 +114,33 @@ describe('API routes', () => {
     expect(body.version).toBe('1.0');
     expect(body.decisions.length).toBe(2);
   });
+
+  // Analytics
+  it('GET /api/analytics/quality returns decision quality metrics', async () => {
+    const res = await app.inject({ method: 'GET', url: '/api/analytics/quality' });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.payload);
+    expect(body.totalDecisions).toBe(2);
+    expect(typeof body.alternativesCoverage).toBe('number');
+    expect(typeof body.consequencesTracking).toBe('number');
+    expect(typeof body.revisitRate).toBe('number');
+  });
+
+  it('GET /api/analytics/patterns returns work pattern metrics', async () => {
+    const res = await app.inject({ method: 'GET', url: '/api/analytics/patterns' });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.payload);
+    expect(body.totalSessions).toBe(1);
+    expect(typeof body.avgDecisionsPerSession).toBe('number');
+    expect(Array.isArray(body.tagTrends)).toBe(true);
+  });
+
+  it('GET /api/analytics/codebase returns codebase metrics', async () => {
+    const res = await app.inject({ method: 'GET', url: '/api/analytics/codebase' });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.payload);
+    expect(Array.isArray(body.hotspots)).toBe(true);
+    expect(Array.isArray(body.topTags)).toBe(true);
+    expect(typeof body.totalFiles).toBe('number');
+  });
 });
