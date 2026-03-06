@@ -87,7 +87,7 @@ const radarBars = computed(() => {
           <h1 class="text-3xl font-black text-slate-100 tracking-tight">Developer Intelligence</h1>
           <p class="text-primary/60 font-medium">Actionable intelligence from your decision history</p>
         </div>
-        <button class="flex items-center gap-2 bg-primary hover:bg-primary/80 text-bg-dark px-6 py-2.5 rounded-lg font-bold text-sm transition-all shadow-[0_0_20px_rgba(13,242,242,0.3)]">
+        <button disabled title="Coming soon" class="flex items-center gap-2 bg-primary/40 text-bg-dark/60 px-6 py-2.5 rounded-lg font-bold text-sm cursor-not-allowed">
           <span class="material-symbols-outlined text-[18px]">ios_share</span>
           Export Analysis
         </button>
@@ -116,7 +116,7 @@ const radarBars = computed(() => {
                   <ul class="space-y-3">
                     <li v-for="(insight, i) in store.coach.insights" :key="i" class="flex items-start gap-3">
                       <span class="mt-1 w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_5px_#0df2f2] flex-shrink-0"></span>
-                      <span class="text-sm text-slate-400" v-html="insight"></span>
+                      <span class="text-sm text-slate-400">{{ insight }}</span>
                     </li>
                   </ul>
                 </template>

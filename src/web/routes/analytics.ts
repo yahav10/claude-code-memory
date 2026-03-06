@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import type { AppDeps } from '../server.js';
 import { getDecisionQualityMetrics, getWorkPatternMetrics, getCodebaseMetrics } from '../queries.js';
-import { generateCoachInsights, resetCoachCache } from '../analytics-coach.js';
+import { generateCoachInsights } from '../analytics-coach.js';
 
 export function registerAnalyticsRoutes(app: FastifyInstance, deps: AppDeps) {
   app.get('/api/analytics/quality', async () => {
