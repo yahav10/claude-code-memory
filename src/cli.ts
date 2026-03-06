@@ -2,6 +2,7 @@
 import { Command } from 'commander';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as os from 'os';
 import * as readline from 'node:readline';
 import { fileURLToPath } from 'url';
 import { initDatabase, findProjectRoot } from './database.js';
@@ -363,6 +364,59 @@ program
       port: parseInt(opts.port, 10),
       open: opts.open !== false,
     });
+  });
+
+program
+  .command('import-sessions')
+  .description('Import past Claude Code sessions from JSONL files')
+  .option('--dry-run', 'Show what would be imported without writing to DB')
+  .option('--skip-extraction', 'Only import session metadata, skip AI decision extraction')
+  .option('--api-key <key>', 'Anthropic API key (defaults to ANTHROPIC_API_KEY)')
+  .option('--concurrency <n>', 'Parallel AI extraction requests', '3')
+  .action(async (opts) => {
+    const root = findProjectRoot();
+    const dbPath = path.join(root, '.claude', 'project-memory.db');
+    const db = initDatabase(dbPath);
+
+    const homeDir = process.env.HOME || os.homedir();
+    const projectsDir = path.join(homeDir, '.claude', 'projects');
+
+    if (opts.dryRun) {
+      const { scanForSessions } = await import('./import/scanner.js');
+      const existingRows = db.prepare('SELECT id FROM sessions').all() as Array<{ id: string }>;
+      const importedIds = new Set(existingRows.map(r => r.id));
+      const result = await scanForSessions(projectsDir, importedIds);
+
+      console.log(`\nScan Results:`);
+      console.log(`  Total sessions found: ${result.totalFound}`);
+      console.log(`  New (not yet imported): ${result.newSessions}`);
+      console.log(`  Already imported: ${result.alreadyImported}`);
+      console.log(`\nProjects:`);
+      for (const p of result.projects) {
+        console.log(`  ${p.dirName}: ${p.sessionCount} sessions (${p.newCount} new)`);
+      }
+      db.close();
+      return;
+    }
+
+    const { runImportPipeline } = await import('./import/pipeline.js');
+    await runImportPipeline({
+      db,
+      projectsDir,
+      skipExtraction: opts.skipExtraction,
+      concurrency: parseInt(opts.concurrency, 10),
+      apiKey: opts.apiKey,
+      onProgress: (p) => {
+        if (p.phase === 'scan') console.log(p.message);
+        else if (p.phase === 'metadata') process.stdout.write(`\r  Importing sessions... ${p.current}/${p.total}`);
+        else if (p.phase === 'extraction') process.stdout.write(`\r  Extracting decisions... ${p.current}/${p.total}`);
+        else if (p.phase === 'done') {
+          console.log(`\n\n  Import complete: ${p.sessionsImported} sessions, ${p.decisionsExtracted} decisions added.`);
+        }
+      },
+    });
+
+    db.close();
   });
 
 program
