@@ -14,6 +14,7 @@ const router = createRouter({
     { path: '/sessions/:id', name: 'session-detail', component: () => import('./pages/SessionDetailPage.vue') },
     { path: '/import-export', name: 'import-export', component: () => import('./pages/ImportExportPage.vue') },
     { path: '/settings', name: 'settings', component: () => import('./pages/SettingsPage.vue') },
+    { path: '/analytics', name: 'analytics', component: () => import('./pages/AnalyticsPage.vue') },
   ],
 });
 

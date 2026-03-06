@@ -6,6 +6,7 @@ const navItems = [
   { path: '/', label: 'Dashboard', icon: 'dashboard' },
   { path: '/decisions', label: 'Decisions', icon: 'psychology' },
   { path: '/sessions', label: 'Sessions', icon: 'history' },
+  { path: '/analytics', label: 'Insights', icon: 'bar_chart' },
   { path: '/import-export', label: 'Import/Export', icon: 'swap_horiz' },
   { path: '/settings', label: 'Settings', icon: 'settings' },
 ];
