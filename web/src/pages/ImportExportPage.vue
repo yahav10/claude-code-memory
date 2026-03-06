@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { api } from '@/composables/useApi';
+import { useImportStore } from '@/stores/import';
+
+const importStore = useImportStore();
 
 const selectedFormat = ref('json');
 const exporting = ref(false);
@@ -156,6 +159,102 @@ function onFileSelect(e: Event) {
           <span class="material-symbols-outlined">upload</span>
           Execute Migration
         </button>
+      </div>
+    </div>
+
+    <!-- Session Import Section -->
+    <div class="mt-8">
+      <div class="bg-bg-dark/40 rounded-xl cyber-border p-6">
+        <div class="flex items-center gap-3 mb-6">
+          <span class="material-symbols-outlined text-primary">sync</span>
+          <h3 class="font-bold text-lg text-white">Import Claude Code Sessions</h3>
+        </div>
+        <p class="text-sm text-slate-400 mb-6">
+          Scan your local Claude Code session history and extract architectural decisions using AI.
+        </p>
+
+        <!-- Scan Button -->
+        <button
+          v-if="!importStore.scanResult && !importStore.importing"
+          @click="importStore.scan()"
+          :disabled="importStore.scanning"
+          class="bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 font-bold py-3 px-6 rounded-lg flex items-center gap-2 transition-colors disabled:opacity-50"
+        >
+          <span class="material-symbols-outlined">search</span>
+          {{ importStore.scanning ? 'Scanning...' : 'Scan Sessions' }}
+        </button>
+
+        <!-- Scan Results -->
+        <div v-if="importStore.scanResult" class="space-y-4">
+          <div class="grid grid-cols-3 gap-4">
+            <div class="bg-bg-dark/60 rounded-lg p-4 cyber-border text-center">
+              <p class="text-2xl font-bold text-white">{{ importStore.scanResult.totalFound }}</p>
+              <p class="text-xs text-slate-500 mt-1">Total Found</p>
+            </div>
+            <div class="bg-bg-dark/60 rounded-lg p-4 cyber-border text-center">
+              <p class="text-2xl font-bold text-primary">{{ importStore.scanResult.newSessions }}</p>
+              <p class="text-xs text-slate-500 mt-1">New Sessions</p>
+            </div>
+            <div class="bg-bg-dark/60 rounded-lg p-4 cyber-border text-center">
+              <p class="text-2xl font-bold text-slate-400">{{ importStore.scanResult.alreadyImported }}</p>
+              <p class="text-xs text-slate-500 mt-1">Already Imported</p>
+            </div>
+          </div>
+
+          <!-- Project Breakdown -->
+          <div v-if="importStore.scanResult.projects.length > 0" class="bg-bg-dark/60 rounded-lg cyber-border overflow-hidden">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="border-b border-primary/10">
+                  <th class="text-left text-slate-400 font-semibold p-3">Project</th>
+                  <th class="text-right text-slate-400 font-semibold p-3">Sessions</th>
+                  <th class="text-right text-slate-400 font-semibold p-3">New</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="p in importStore.scanResult.projects" :key="p.dirName" class="border-b border-primary/5">
+                  <td class="p-3 text-slate-300 font-mono text-xs truncate max-w-[300px]">{{ p.dirName }}</td>
+                  <td class="p-3 text-right text-white">{{ p.sessionCount }}</td>
+                  <td class="p-3 text-right text-primary font-bold">{{ p.newCount }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Import Button -->
+          <div class="flex gap-3">
+            <button
+              v-if="importStore.scanResult.newSessions > 0"
+              @click="importStore.runImport()"
+              :disabled="importStore.importing"
+              class="bg-primary hover:bg-primary/90 text-bg-dark font-bold py-3 px-6 rounded-lg flex items-center gap-2 transition-colors disabled:opacity-50"
+            >
+              <span class="material-symbols-outlined">{{ importStore.importing ? 'hourglass_top' : 'play_arrow' }}</span>
+              {{ importStore.importing ? 'Importing...' : 'Import & Extract Decisions' }}
+            </button>
+            <button
+              @click="importStore.reset()"
+              class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+            >Rescan</button>
+          </div>
+
+          <!-- Import Result -->
+          <div v-if="importStore.importResult" class="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-4">
+            <div class="flex items-center gap-2 text-emerald-400 font-bold mb-2">
+              <span class="material-symbols-outlined">check_circle</span>
+              Import Complete
+            </div>
+            <p class="text-sm text-slate-300">
+              {{ importStore.importResult.sessionsImported }} sessions imported,
+              {{ importStore.importResult.decisionsExtracted }} decisions extracted.
+            </p>
+          </div>
+        </div>
+
+        <!-- Error -->
+        <div v-if="importStore.error" class="mt-4 bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-red-400 text-sm">
+          {{ importStore.error }}
+        </div>
       </div>
     </div>
   </div>
