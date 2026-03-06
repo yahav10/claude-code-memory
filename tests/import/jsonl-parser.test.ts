@@ -2,7 +2,25 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { parseSessionFile, type SessionMetadata } from '../../src/import/jsonl-parser.js';
+import { parseSessionFile, cleanPromptText, type SessionMetadata } from '../../src/import/jsonl-parser.js';
+
+describe('cleanPromptText', () => {
+  it('strips paired XML-like tags', () => {
+    expect(cleanPromptText('<command-message>foo</command-message> bar')).toBe('bar');
+  });
+
+  it('strips unclosed tags', () => {
+    expect(cleanPromptText('<ide_opened_file>The user opened file.txt')).toBe('The user opened file.txt');
+  });
+
+  it('collapses whitespace', () => {
+    expect(cleanPromptText('hello   \n\n  world')).toBe('hello world');
+  });
+
+  it('handles clean text unchanged', () => {
+    expect(cleanPromptText('Fix the auth bug')).toBe('Fix the auth bug');
+  });
+});
 
 describe('JSONL Parser', () => {
   let tmpDir: string;
@@ -101,6 +119,67 @@ describe('JSONL Parser', () => {
     fs.writeFileSync(emptyFile, '');
     const meta = await parseSessionFile(emptyFile);
     expect(meta).toBeNull();
+  });
+
+  it('strips XML-like tags from first prompt', async () => {
+    const tagFile = path.join(tmpDir, 'tagged.jsonl');
+    const lines = [
+      JSON.stringify({
+        type: 'user',
+        uuid: 'msg-1',
+        sessionId: 'sess-tagged',
+        timestamp: '2026-01-01T00:00:00.000Z',
+        cwd: '/tmp',
+        gitBranch: 'main',
+        version: '2.0.0',
+        message: { role: 'user', content: [{ type: 'text', text: '<command-message>superpowers:executing-plans</command-message> <command-name>/superpowers:executing-plans</command-name> <command-args>docs/plans/plan.md</command-args>' }] },
+      }),
+    ];
+    fs.writeFileSync(tagFile, lines.join('\n'));
+    const meta = await parseSessionFile(tagFile);
+    expect(meta).not.toBeNull();
+    expect(meta!.firstPrompt).not.toContain('<command-message>');
+    expect(meta!.firstPrompt).not.toContain('<command-name>');
+    expect(meta!.firstPrompt).not.toContain('<command-args>');
+  });
+
+  it('prefers real user prompt over system-generated first message', async () => {
+    const sysFile = path.join(tmpDir, 'system-first.jsonl');
+    const lines = [
+      JSON.stringify({
+        type: 'user',
+        uuid: 'msg-1',
+        sessionId: 'sess-sys',
+        timestamp: '2026-01-01T00:00:00.000Z',
+        cwd: '/tmp',
+        gitBranch: 'main',
+        version: '2.0.0',
+        message: { role: 'user', content: [{ type: 'text', text: 'You are a JSON generator. Summarize this text in JSON format.\n\nRULES:\n- Output ONLY valid JSON' }] },
+      }),
+      JSON.stringify({
+        type: 'assistant',
+        uuid: 'msg-2',
+        parentUuid: 'msg-1',
+        sessionId: 'sess-sys',
+        timestamp: '2026-01-01T00:00:05.000Z',
+        message: { role: 'assistant', content: [{ type: 'text', text: 'OK' }] },
+      }),
+      JSON.stringify({
+        type: 'user',
+        uuid: 'msg-3',
+        parentUuid: 'msg-2',
+        sessionId: 'sess-sys',
+        timestamp: '2026-01-01T00:01:00.000Z',
+        cwd: '/tmp',
+        gitBranch: 'main',
+        version: '2.0.0',
+        message: { role: 'user', content: [{ type: 'text', text: 'Fix the login bug on the dashboard' }] },
+      }),
+    ];
+    fs.writeFileSync(sysFile, lines.join('\n'));
+    const meta = await parseSessionFile(sysFile);
+    expect(meta).not.toBeNull();
+    expect(meta!.firstPrompt).toBe('Fix the login bug on the dashboard');
   });
 
   it('skips malformed JSON lines gracefully', async () => {
