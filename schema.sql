@@ -5,7 +5,12 @@ CREATE TABLE IF NOT EXISTS sessions (
   started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   ended_at TIMESTAMP,
   summary TEXT,
-  decision_count INTEGER DEFAULT 0
+  decision_count INTEGER DEFAULT 0,
+  project_path TEXT,
+  git_branch TEXT,
+  message_count INTEGER DEFAULT 0,
+  tool_call_count INTEGER DEFAULT 0,
+  source TEXT DEFAULT 'mcp'
 );
 
 CREATE TABLE IF NOT EXISTS decisions (

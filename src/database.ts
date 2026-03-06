@@ -20,7 +20,26 @@ export function initDatabase(dbPath: string): Database.Database {
   const schema = fs.readFileSync(schemaPath, 'utf-8');
   db.exec(schema);
 
+  migrateSessionsTable(db);
+
   return db;
+}
+
+function migrateSessionsTable(db: Database.Database): void {
+  const columns = db.pragma('table_info(sessions)') as Array<{ name: string }>;
+  const existing = new Set(columns.map(c => c.name));
+
+  const migrations: [string, string][] = [
+    ['project_path', 'ALTER TABLE sessions ADD COLUMN project_path TEXT'],
+    ['git_branch', 'ALTER TABLE sessions ADD COLUMN git_branch TEXT'],
+    ['message_count', 'ALTER TABLE sessions ADD COLUMN message_count INTEGER DEFAULT 0'],
+    ['tool_call_count', 'ALTER TABLE sessions ADD COLUMN tool_call_count INTEGER DEFAULT 0'],
+    ['source', "ALTER TABLE sessions ADD COLUMN source TEXT DEFAULT 'mcp'"],
+  ];
+
+  for (const [col, sql] of migrations) {
+    if (!existing.has(col)) db.exec(sql);
+  }
 }
 
 export function findProjectRoot(): string {

@@ -147,6 +147,18 @@ describe('initDatabase', () => {
 
     db.close();
   });
+
+  it('migrates sessions table with new columns', () => {
+    const db = initDatabase(path.join(tmpDir, 'migrate-test.db'));
+    const columns = db.pragma('table_info(sessions)') as Array<{ name: string }>;
+    const names = columns.map(c => c.name);
+    expect(names).toContain('project_path');
+    expect(names).toContain('git_branch');
+    expect(names).toContain('message_count');
+    expect(names).toContain('tool_call_count');
+    expect(names).toContain('source');
+    db.close();
+  });
 });
 
 describe('findProjectRoot', () => {
