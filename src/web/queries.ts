@@ -312,3 +312,44 @@ export function getDatabaseInfo(db: Database.Database, dbPath: string): Database
     walEnabled: walMode === 'wal',
   };
 }
+
+// --- Analytics: Decision Quality ---
+
+export interface DecisionQualityMetrics {
+  totalDecisions: number;
+  alternativesCoverage: number;  // percentage 0-100
+  avgRationaleLength: number;    // avg chars
+  consequencesTracking: number;  // percentage 0-100
+  revisitRate: number;           // percentage of deprecated+superseded
+}
+
+export function getDecisionQualityMetrics(db: Database.Database): DecisionQualityMetrics {
+  const total = (db.prepare('SELECT COUNT(*) as c FROM decisions').get() as { c: number }).c;
+  if (total === 0) {
+    return { totalDecisions: 0, alternativesCoverage: 0, avgRationaleLength: 0, consequencesTracking: 0, revisitRate: 0 };
+  }
+
+  const withAlts = (db.prepare(
+    "SELECT COUNT(*) as c FROM decisions WHERE alternatives IS NOT NULL AND alternatives != '[]' AND alternatives != ''"
+  ).get() as { c: number }).c;
+
+  const avgRationale = (db.prepare(
+    'SELECT AVG(LENGTH(rationale)) as avg FROM decisions'
+  ).get() as { avg: number }).avg;
+
+  const withConsequences = (db.prepare(
+    "SELECT COUNT(*) as c FROM decisions WHERE consequences IS NOT NULL AND consequences != ''"
+  ).get() as { c: number }).c;
+
+  const revisited = (db.prepare(
+    "SELECT COUNT(*) as c FROM decisions WHERE status IN ('deprecated', 'superseded')"
+  ).get() as { c: number }).c;
+
+  return {
+    totalDecisions: total,
+    alternativesCoverage: Math.round((withAlts / total) * 100),
+    avgRationaleLength: Math.round(avgRationale || 0),
+    consequencesTracking: Math.round((withConsequences / total) * 100),
+    revisitRate: Math.round((revisited / total) * 100),
+  };
+}
