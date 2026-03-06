@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+@layer components {
+  .cyber-border {
+    @apply border border-primary/20;
+  }
+  .neon-glow {
+    box-shadow: 0 0 15px rgba(13, 242, 242, 0.1);
+  }
+  .neon-border {
+    box-shadow: 0 0 10px rgba(13, 242, 242, 0.2);
+    border: 1px solid rgba(13, 242, 242, 0.3);
+  }
+}
