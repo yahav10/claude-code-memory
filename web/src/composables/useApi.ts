@@ -37,4 +37,12 @@ export const api = {
 
   // Export
   exportData: (format: string) => fetchJson<any>(`/export?format=${format}`),
+
+  // Import Sessions
+  scanSessions: () => fetchJson<any>('/import/scan', { method: 'POST' }),
+  runImport: (opts?: { skipExtraction?: boolean }) =>
+    fetchJson<any>('/import/run', {
+      method: 'POST',
+      body: JSON.stringify(opts || {}),
+    }),
 };
