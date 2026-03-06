@@ -38,7 +38,10 @@ Return valid JSON with this exact structure:
 }
 
 If no significant architectural or technical decisions were made, return:
-{"summary": "...", "decisions": []}`;
+{"summary": "...", "decisions": []}
+
+Be concise — keep each field to 1-2 sentences. Limit to the 5 most important decisions.
+Return ONLY the JSON, no markdown fences or extra text.`;
 
 let clientInstance: Anthropic | null = null;
 
@@ -57,7 +60,7 @@ export async function extractDecisions(
 
   const response = await client.messages.create({
     model: 'claude-haiku-4-5-20251001',
-    max_tokens: 2048,
+    max_tokens: 4096,
     messages: [{
       role: 'user',
       content: `${EXTRACTION_PROMPT}\n\n---\n\nTRANSCRIPT:\n${transcript}`,
@@ -70,7 +73,9 @@ export async function extractDecisions(
     .join('');
 
   try {
-    const parsed = JSON.parse(text);
+    // Strip markdown code fences if present
+    const jsonText = text.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
+    const parsed = JSON.parse(jsonText);
     return {
       summary: parsed.summary || '',
       decisions: (parsed.decisions || []).map((d: any) => ({
