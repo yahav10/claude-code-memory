@@ -348,6 +348,24 @@ program
   });
 
 program
+  .command('web')
+  .description('Start the web dashboard')
+  .option('-p, --port <number>', 'Server port', '3847')
+  .option('--no-open', 'Do not auto-open browser')
+  .action(async (opts) => {
+    const { startWebServer } = await import('./web/server.js');
+
+    const root = findProjectRoot();
+    const dbPath = path.join(root, '.claude', 'project-memory.db');
+    const db = initDatabase(dbPath);
+
+    await startWebServer({ db, dbPath }, {
+      port: parseInt(opts.port, 10),
+      open: opts.open !== false,
+    });
+  });
+
+program
   .command('serve')
   .description('Start the MCP server (called by Claude Code)')
   .action(async () => {
