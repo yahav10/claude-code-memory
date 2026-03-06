@@ -47,4 +47,10 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(opts || {}),
     }),
+
+  // Analytics
+  getAnalyticsQuality: () => fetchJson<any>('/analytics/quality'),
+  getAnalyticsPatterns: () => fetchJson<any>('/analytics/patterns'),
+  getAnalyticsCodebase: () => fetchJson<any>('/analytics/codebase'),
+  getAnalyticsCoach: () => fetchJson<any>('/analytics/coach', { method: 'POST' }),
 };
