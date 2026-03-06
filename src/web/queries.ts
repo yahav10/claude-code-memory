@@ -411,3 +411,40 @@ export function getWorkPatternMetrics(db: Database.Database): WorkPatternMetrics
     tagTrends,
   };
 }
+
+// --- Analytics: Codebase Knowledge ---
+
+export interface CodebaseMetrics {
+  hotspots: { filePath: string; decisionCount: number }[];
+  topTags: { tag: string; count: number }[];
+  totalFiles: number;
+}
+
+export function getCodebaseMetrics(db: Database.Database): CodebaseMetrics {
+  const hotspots = db.prepare(`
+    SELECT df.file_path as filePath, COUNT(DISTINCT df.decision_id) as decisionCount
+    FROM decision_files df
+    GROUP BY df.file_path
+    ORDER BY decisionCount DESC
+    LIMIT 15
+  `).all() as { filePath: string; decisionCount: number }[];
+
+  const totalFiles = (db.prepare(
+    'SELECT COUNT(DISTINCT file_path) as c FROM decision_files'
+  ).get() as { c: number }).c;
+
+  // Top tags
+  const allDecisions = db.prepare('SELECT tags FROM decisions WHERE tags IS NOT NULL').all() as { tags: string }[];
+  const tagCounts = new Map<string, number>();
+  for (const row of allDecisions) {
+    for (const tag of parseTags(row.tags)) {
+      tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
+    }
+  }
+  const topTags = [...tagCounts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 20)
+    .map(([tag, count]) => ({ tag, count }));
+
+  return { hotspots, topTags, totalFiles };
+}

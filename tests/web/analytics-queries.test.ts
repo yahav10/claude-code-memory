@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { initDatabase } from '../../src/database.js';
-import { getDecisionQualityMetrics, getWorkPatternMetrics } from '../../src/web/queries.js';
+import { getDecisionQualityMetrics, getWorkPatternMetrics, getCodebaseMetrics } from '../../src/web/queries.js';
 import type Database from 'better-sqlite3';
 
 function seedAnalyticsData(db: Database.Database) {
@@ -131,5 +131,42 @@ describe('Analytics: Work Pattern Metrics', () => {
   it('returns zero-decision session count', () => {
     const metrics = getWorkPatternMetrics(db);
     expect(metrics.zeroDecisionSessions).toBe(1);
+  });
+});
+
+describe('Analytics: Codebase Metrics', () => {
+  let db: Database.Database;
+  let tmpDir: string;
+
+  beforeAll(() => {
+    tmpDir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'ccm-codebase-')));
+    const dbPath = path.join(tmpDir, 'test.db');
+    db = initDatabase(dbPath);
+    seedAnalyticsData(db);
+  });
+
+  afterAll(() => {
+    db.close();
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it('returns architecture hotspots sorted by decision count', () => {
+    const metrics = getCodebaseMetrics(db);
+    // src/auth.ts appears in decision 1 and 5 = 2 decisions
+    expect(metrics.hotspots[0].filePath).toBe('src/auth.ts');
+    expect(metrics.hotspots[0].decisionCount).toBe(2);
+  });
+
+  it('returns top tags with counts', () => {
+    const metrics = getCodebaseMetrics(db);
+    expect(metrics.topTags.length).toBeGreaterThan(0);
+    expect(metrics.topTags[0]).toHaveProperty('tag');
+    expect(metrics.topTags[0]).toHaveProperty('count');
+  });
+
+  it('returns total unique files tracked', () => {
+    const metrics = getCodebaseMetrics(db);
+    // src/auth.ts, src/middleware.ts, src/database.ts, src/api/routes.ts, src/cache.ts = 5
+    expect(metrics.totalFiles).toBe(5);
   });
 });
