@@ -14,7 +14,11 @@
   ],
   "scripts": {
     "build": "tsc",
+    "build:web": "cd web && npx vite build",
+    "build:all": "npm run build && npm run build:web",
     "dev": "tsc --watch",
+    "dev:web": "cd web && npx vite",
+    "dev:server": "npm run build && node dist/cli.js web --no-open",
     "serve": "node dist/server.js",
     "test": "vitest run",
     "test:watch": "vitest",
