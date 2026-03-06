@@ -87,21 +87,26 @@ onMounted(fetchPage);
         <div class="mb-6">
           <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Status</p>
           <div class="space-y-2">
-            <label
+            <button
               v-for="s in allStatuses"
               :key="s"
-              class="flex items-center gap-3 cursor-pointer group"
+              @click="toggleStatus(s)"
+              class="flex items-center gap-3 cursor-pointer group w-full"
             >
-              <input
-                type="checkbox"
-                :checked="statusFilters.includes(s)"
-                @change="toggleStatus(s)"
-                class="w-4 h-4 rounded border-primary/30 bg-bg-dark text-primary focus:ring-primary/30"
-              />
+              <span
+                :class="[
+                  'w-4 h-4 rounded flex-shrink-0 flex items-center justify-center border transition-colors',
+                  statusFilters.includes(s)
+                    ? 'bg-primary border-primary'
+                    : 'border-slate-600 bg-bg-dark/60 group-hover:border-slate-400'
+                ]"
+              >
+                <span v-if="statusFilters.includes(s)" class="material-symbols-outlined text-bg-dark text-xs leading-none" style="font-size: 14px">check</span>
+              </span>
               <span class="text-sm capitalize group-hover:text-white transition-colors"
                 :class="statusFilters.includes(s) ? 'text-white' : 'text-slate-400'"
               >{{ s }}</span>
-            </label>
+            </button>
           </div>
         </div>
       </div>
