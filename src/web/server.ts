@@ -12,6 +12,7 @@ import { registerDecisionRoutes } from './routes/decisions.js';
 import { registerSessionRoutes } from './routes/sessions.js';
 import { registerSettingsRoutes } from './routes/settings.js';
 import { registerImportExportRoutes } from './routes/import-export.js';
+import { registerImportSessionsRoutes } from './routes/import-sessions.js';
 
 export interface AppDeps {
   db: Database.Database;
@@ -29,6 +30,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   registerSessionRoutes(app, deps);
   registerSettingsRoutes(app, deps);
   registerImportExportRoutes(app, deps);
+  registerImportSessionsRoutes(app, deps);
 
   return app;
 }
