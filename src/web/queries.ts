@@ -353,3 +353,61 @@ export function getDecisionQualityMetrics(db: Database.Database): DecisionQualit
     revisitRate: Math.round((revisited / total) * 100),
   };
 }
+
+// --- Analytics: Work Patterns ---
+
+export interface TagTrend {
+  tag: string;
+  month: string;  // YYYY-MM
+  count: number;
+}
+
+export interface WorkPatternMetrics {
+  totalSessions: number;
+  avgDecisionsPerSession: number;
+  zeroDecisionSessions: number;
+  decisionDensity: { decisionCount: number; sessions: number }[];
+  tagTrends: TagTrend[];
+}
+
+export function getWorkPatternMetrics(db: Database.Database): WorkPatternMetrics {
+  const totalSessions = (db.prepare('SELECT COUNT(*) as c FROM sessions').get() as { c: number }).c;
+  const totalDecisions = (db.prepare('SELECT COUNT(*) as c FROM decisions').get() as { c: number }).c;
+
+  const zeroDecisionSessions = (db.prepare(
+    'SELECT COUNT(*) as c FROM sessions WHERE decision_count = 0'
+  ).get() as { c: number }).c;
+
+  const density = db.prepare(
+    'SELECT decision_count as decisionCount, COUNT(*) as sessions FROM sessions GROUP BY decision_count ORDER BY decision_count ASC'
+  ).all() as { decisionCount: number; sessions: number }[];
+
+  // Tag trends by month
+  const allDecisions = db.prepare(
+    "SELECT tags, created_at FROM decisions WHERE tags IS NOT NULL AND created_at IS NOT NULL"
+  ).all() as { tags: string; created_at: string }[];
+
+  const trendMap = new Map<string, number>(); // "tag|YYYY-MM" -> count
+  for (const row of allDecisions) {
+    const month = row.created_at.slice(0, 7); // YYYY-MM
+    for (const tag of parseTags(row.tags)) {
+      const key = `${tag}|${month}`;
+      trendMap.set(key, (trendMap.get(key) || 0) + 1);
+    }
+  }
+
+  const tagTrends: TagTrend[] = [...trendMap.entries()]
+    .map(([key, count]) => {
+      const [tag, month] = key.split('|');
+      return { tag, month, count };
+    })
+    .sort((a, b) => a.month.localeCompare(b.month) || b.count - a.count);
+
+  return {
+    totalSessions,
+    avgDecisionsPerSession: totalSessions > 0 ? totalDecisions / totalSessions : 0,
+    zeroDecisionSessions,
+    decisionDensity: density,
+    tagTrends,
+  };
+}

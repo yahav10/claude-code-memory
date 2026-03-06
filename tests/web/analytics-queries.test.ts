@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { initDatabase } from '../../src/database.js';
-import { getDecisionQualityMetrics } from '../../src/web/queries.js';
+import { getDecisionQualityMetrics, getWorkPatternMetrics } from '../../src/web/queries.js';
 import type Database from 'better-sqlite3';
 
 function seedAnalyticsData(db: Database.Database) {
@@ -82,5 +82,54 @@ describe('Analytics: Decision Quality Metrics', () => {
   it('returns total decision count', () => {
     const metrics = getDecisionQualityMetrics(db);
     expect(metrics.totalDecisions).toBe(5);
+  });
+});
+
+describe('Analytics: Work Pattern Metrics', () => {
+  let db: Database.Database;
+  let tmpDir: string;
+
+  beforeAll(() => {
+    tmpDir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'ccm-patterns-')));
+    const dbPath = path.join(tmpDir, 'test.db');
+    db = initDatabase(dbPath);
+    seedAnalyticsData(db);
+  });
+
+  afterAll(() => {
+    db.close();
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it('returns session complexity stats', () => {
+    const metrics = getWorkPatternMetrics(db);
+    expect(metrics.totalSessions).toBe(3);
+    expect(metrics.avgDecisionsPerSession).toBeCloseTo(5 / 3, 1);
+  });
+
+  it('returns decision density distribution', () => {
+    const metrics = getWorkPatternMetrics(db);
+    // s1 has 3, s2 has 2, s3 has 0
+    expect(metrics.decisionDensity).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ decisionCount: 0, sessions: 1 }),
+        expect.objectContaining({ decisionCount: 2, sessions: 1 }),
+        expect.objectContaining({ decisionCount: 3, sessions: 1 }),
+      ])
+    );
+  });
+
+  it('returns tag trend data', () => {
+    const metrics = getWorkPatternMetrics(db);
+    // Tags: auth(1), security(1), database(1), tooling(1), api(1), architecture(1), performance(1), infrastructure(1)
+    expect(metrics.tagTrends.length).toBeGreaterThan(0);
+    expect(metrics.tagTrends[0]).toHaveProperty('tag');
+    expect(metrics.tagTrends[0]).toHaveProperty('month');
+    expect(metrics.tagTrends[0]).toHaveProperty('count');
+  });
+
+  it('returns zero-decision session count', () => {
+    const metrics = getWorkPatternMetrics(db);
+    expect(metrics.zeroDecisionSessions).toBe(1);
   });
 });
