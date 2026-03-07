@@ -17,7 +17,7 @@ describe('workspace-setup', () => {
         mcpServers: {
           'project-memory': {
             command: 'npx',
-            args: ['claude-code-memory', 'serve'],
+            args: ['claude-session-memory', 'serve'],
             env: { PROJECT_ROOT: tmpDir },
           },
         },

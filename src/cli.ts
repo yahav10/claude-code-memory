@@ -50,7 +50,7 @@ export function runInit(projectRoot: string, options: InitOptions): void {
     if (!mcpConfig.mcpServers) mcpConfig.mcpServers = {};
     mcpConfig.mcpServers['project-memory'] = {
       command: 'npx',
-      args: ['claude-code-memory', 'serve'],
+      args: ['claude-session-memory', 'serve'],
       env: { PROJECT_ROOT: projectRoot },
     };
     fs.writeFileSync(mcpJsonPath, JSON.stringify(mcpConfig, null, 2) + '\n');
@@ -67,7 +67,7 @@ export function runInit(projectRoot: string, options: InitOptions): void {
     if (!settings.mcpServers) settings.mcpServers = {};
     settings.mcpServers[`project-memory-${path.basename(projectRoot)}`] = {
       command: 'npx',
-      args: ['claude-code-memory', 'serve'],
+      args: ['claude-session-memory', 'serve'],
       env: { PROJECT_ROOT: projectRoot },
     };
     fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n');
@@ -98,7 +98,7 @@ export function runInit(projectRoot: string, options: InitOptions): void {
 export function runExport(projectRoot: string, format: string, outputPath?: string): void {
   const dbPath = path.join(projectRoot, '.claude', 'project-memory.db');
   if (!fs.existsSync(dbPath)) {
-    throw new Error('No project memory database found. Run "claude-code-memory init" first.');
+    throw new Error('No project memory database found. Run "claude-session-memory init" first.');
   }
 
   const db = initDatabase(dbPath);
@@ -163,7 +163,7 @@ export function runExport(projectRoot: string, format: string, outputPath?: stri
 export function runImport(projectRoot: string, filePath: string): void {
   const dbPath = path.join(projectRoot, '.claude', 'project-memory.db');
   if (!fs.existsSync(dbPath)) {
-    throw new Error('No project memory database found. Run "claude-code-memory init" first.');
+    throw new Error('No project memory database found. Run "claude-session-memory init" first.');
   }
 
   const raw = fs.readFileSync(filePath, 'utf-8');
@@ -237,7 +237,7 @@ export function runImport(projectRoot: string, filePath: string): void {
 export function runStats(projectRoot: string): void {
   const dbPath = path.join(projectRoot, '.claude', 'project-memory.db');
   if (!fs.existsSync(dbPath)) {
-    throw new Error('No project memory database found. Run "claude-code-memory init" first.');
+    throw new Error('No project memory database found. Run "claude-session-memory init" first.');
   }
 
   const db = initDatabase(dbPath);
@@ -277,7 +277,7 @@ async function promptChoice(question: string, choices: string[], defaultIdx: num
 const program = new Command();
 
 program
-  .name('claude-code-memory')
+  .name('claude-session-memory')
   .description('Persistent project memory for Claude Code')
   .version('0.1.0');
 
@@ -442,7 +442,7 @@ program
       const root = findProjectRoot();
       const dbPath = path.join(root, '.claude', 'project-memory.db');
       if (!fs.existsSync(dbPath)) {
-        throw new Error('No project memory database found. Run "claude-code-memory init" first.');
+        throw new Error('No project memory database found. Run "claude-session-memory init" first.');
       }
       const db = initDatabase(dbPath);
       const { syncClaudeMd } = await import('./utils/claudemd-sync.js');
@@ -468,7 +468,7 @@ program
 // Only parse when run as CLI entry point (not when imported in tests)
 const isMainModule = process.argv[1] && (
   process.argv[1].endsWith('/cli.js') ||
-  process.argv[1].endsWith('/claude-code-memory')
+  process.argv[1].endsWith('/claude-session-memory')
 );
 if (isMainModule) {
   program.parse();

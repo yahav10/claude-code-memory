@@ -1,6 +1,6 @@
 # Project Memory System
 
-This project uses `claude-code-memory` for architectural decision tracking.
+This project uses `claude-session-memory` for architectural decision tracking.
 
 ## When to Save Decisions
 

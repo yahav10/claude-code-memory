@@ -1,11 +1,11 @@
 {
-  "name": "claude-code-memory",
+  "name": "claude-session-memory",
   "version": "0.2.0",
   "description": "Persistent project memory for Claude Code — track architectural decisions and query them conversationally",
   "type": "module",
   "main": "./dist/index.js",
   "bin": {
-    "claude-code-memory": "./dist/cli.js"
+    "claude-session-memory": "./dist/cli.js"
   },
   "files": [
     "dist",

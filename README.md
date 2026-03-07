@@ -1,10 +1,10 @@
 <div align="center">
 
-# 🧠 claude-code-memory
+# 🧠 claude-session-memory
 
 **Give Claude Code a memory. Never re-explain architectural decisions again.**
 
-[![npm version](https://img.shields.io/npm/v/claude-code-memory?color=blue&label=npm)](https://www.npmjs.com/package/claude-code-memory)
+[![npm version](https://img.shields.io/npm/v/claude-session-memory?color=blue&label=npm)](https://www.npmjs.com/package/claude-session-memory)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18-brightgreen)](https://nodejs.org)
 [![100% Local](https://img.shields.io/badge/Privacy-100%25_Local-purple)](/)
@@ -110,7 +110,7 @@ An MCP server that gives Claude Code a **queryable SQLite database** of your pro
 ## ⚡ Quick Start
 
 ```bash
-npx claude-code-memory init
+npx claude-session-memory init
 ```
 
 Restart Claude Code. **That's it.** 🎉
@@ -177,21 +177,21 @@ Restart Claude Code. **That's it.** 🎉
 
 | Command | Description |
 |---------|-------------|
-| `npx claude-code-memory init` | 🏁 Initialize project memory |
-| `npx claude-code-memory workspace-setup [dir]` | 🔗 Share context memory across all sub-projects in a workspace |
-| `npx claude-code-memory export` | 📤 Export decisions (JSON/Markdown/CSV) |
-| `npx claude-code-memory import <file>` | 📥 Import decisions from JSON |
-| `npx claude-code-memory sync-claudemd` | 📝 Sync active decisions into CLAUDE.md |
-| `npx claude-code-memory stats` | 📊 Show memory statistics |
+| `npx claude-session-memory init` | 🏁 Initialize project memory |
+| `npx claude-session-memory workspace-setup [dir]` | 🔗 Share context memory across all sub-projects in a workspace |
+| `npx claude-session-memory export` | 📤 Export decisions (JSON/Markdown/CSV) |
+| `npx claude-session-memory import <file>` | 📥 Import decisions from JSON |
+| `npx claude-session-memory sync-claudemd` | 📝 Sync active decisions into CLAUDE.md |
+| `npx claude-session-memory stats` | 📊 Show memory statistics |
 
 ### Workspace Setup
 
 If you have a monorepo or workspace with multiple sub-projects (each with their own `.git`), use `workspace-setup` to share context memory across all of them:
 
 ```bash
-npx claude-code-memory workspace-setup /path/to/workspace
-npx claude-code-memory workspace-setup --dry-run   # Preview changes
-npx claude-code-memory workspace-setup --force      # Overwrite existing configs
+npx claude-session-memory workspace-setup /path/to/workspace
+npx claude-session-memory workspace-setup --dry-run   # Preview changes
+npx claude-session-memory workspace-setup --force      # Overwrite existing configs
 ```
 
 This symlinks the root `.mcp.json` into every git sub-project so they all share the same decision history.
@@ -199,10 +199,10 @@ This symlinks the root `.mcp.json` into every git sub-project so they all share 
 ### Export Formats
 
 ```bash
-npx claude-code-memory export                          # JSON (default)
-npx claude-code-memory export --format markdown        # Human-readable
-npx claude-code-memory export --format csv             # Spreadsheet
-npx claude-code-memory export --output ./backup.json   # Custom path
+npx claude-session-memory export                          # JSON (default)
+npx claude-session-memory export --format markdown        # Human-readable
+npx claude-session-memory export --format csv             # Spreadsheet
+npx claude-session-memory export --output ./backup.json   # Custom path
 ```
 
 ## 🧹 Smart Deduplication
@@ -234,7 +234,7 @@ Faded decisions (confidence < 0.3) are excluded from CLAUDE.md sync but remain q
 Auto-generate a structured decisions section in your `CLAUDE.md`:
 
 ```bash
-npx claude-code-memory sync-claudemd
+npx claude-session-memory sync-claudemd
 ```
 
 Or call `sync_claude_md` as an MCP tool during a conversation. The output is injected between markers:
@@ -257,7 +257,7 @@ Any content **outside** the markers is preserved. If no markers exist, they're a
 ## 🏗️ Architecture
 
 ```
-claude-code-memory
+claude-session-memory
 ├── Storage:      SQLite + FTS5 full-text search, WAL mode
 ├── Transport:    MCP stdio (spawned by Claude Code)
 ├── Dependencies: better-sqlite3, @modelcontextprotocol/sdk, commander
