@@ -28,6 +28,70 @@ Every new Claude Code session starts from scratch.
 
 `CLAUDE.md` helps but it's static, non-queryable, and becomes a dumping ground.
 
+---
+
+<div align="center">
+
+## 💰 The Real Cost of Forgetting
+
+</div>
+
+Every time Claude doesn't know your project context, **you pay for it** — in tokens, in time, and in wrong answers.
+
+```
+  Without memory                          With memory
+  ─────────────────                       ─────────────────
+  You: "Add auth to /orders"              You: "Add auth to /orders"
+        │                                       │
+        ▼                                       ▼
+  Claude: "What auth system                Claude calls query_memory("auth")
+   do you use? JWT? Sessions?                    │
+   OAuth? What middleware?"                      ▼
+        │                                 Claude: "Adding JWT middleware
+        ▼                                  using your existing auth pattern
+  You: [5 minutes re-explaining]           from decision #12..."
+        │                                       │
+        ▼                                       ▼
+  Claude: "Got it. And what                ✅ Correct implementation
+   database? What ORM?"                      on first try
+        │
+        ▼
+  You: [3 more minutes explaining]
+        │
+        ▼
+  Claude builds it wrong anyway
+   because context was incomplete
+```
+
+<table>
+<tr>
+<td width="50%">
+
+**Without memory (session 30)**
+- 🔄 Re-explain 3-5 decisions per session
+- 💬 10-15 extra back-and-forth messages
+- ❌ Wrong assumptions from missing context
+- 🔥 Token burn on repeated explanations
+- ⏱️ ~15 min wasted per session
+
+</td>
+<td width="50%">
+
+**With memory (session 30)**
+- ✅ Claude recalls all 47 decisions instantly
+- 💬 Skip straight to implementation
+- 🎯 Correct assumptions from day one
+- 📉 Fewer tokens, faster completions
+- ⏱️ Time saved compounds every session
+
+</td>
+</tr>
+</table>
+
+> **The math**: If you run 3 Claude Code sessions/day and waste ~15 min each re-explaining context, that's **5+ hours/week**. With a team of 4, that's **20 hours/week** — gone. Project memory eliminates this entirely.
+
+---
+
 ## 💡 The Solution
 
 An MCP server that gives Claude Code a **queryable SQLite database** of your project's architectural decisions. Decisions are saved during conversations and persist across sessions.
@@ -36,11 +100,11 @@ An MCP server that gives Claude Code a **queryable SQLite database** of your pro
 
 | Benefit | What it means for you |
 |---------|----------------------|
+| 💰 **Save tokens and money** | Claude gets context from memory instead of you burning tokens re-explaining it |
 | 🔁 **Never re-explain decisions** | Claude remembers what you decided and why, across every session |
-| 🔍 **Queryable architectural history** | Ask "why did we choose React?" and get the full rationale, alternatives, and trade-offs |
-| 📈 **Knowledge that compounds** | Every session builds on all previous ones — the more you use it, the more valuable it becomes |
-| 🚀 **Instant onboarding** | New team members query past decisions instead of digging through Slack threads |
-| 🏛️ **Decision archaeology** | Six months later, the "why" behind your codebase is one question away |
+| 🎯 **Right answers on first try** | Full project context means fewer wrong assumptions and less back-and-forth |
+| 📈 **Knowledge that compounds** | Session 1 is normal. Session 50 feels like magic — Claude knows everything |
+| 🚀 **Instant team onboarding** | New team members query past decisions instead of digging through Slack threads |
 | 🔒 **100% local and private** | SQLite on your machine, zero network calls, zero telemetry |
 
 ## ⚡ Quick Start
@@ -216,6 +280,17 @@ MIT — use it however you like.
 ---
 
 <div align="center">
+
+### What using project memory actually feels like
+
+**Session 1** — You save your first decision. Nothing special yet.<br>
+**Session 5** — Claude stops asking what database you use. It knows.<br>
+**Session 20** — You say "add caching" and Claude already knows your stack, your patterns, your preferences.<br>
+**Session 50** — A new teammate opens Claude Code and asks "how does auth work?" — full history, instantly.<br>
+
+**The more you use it, the more valuable it becomes.**
+
+---
 
 **Built with ❤️ for the Claude Code community**
 
