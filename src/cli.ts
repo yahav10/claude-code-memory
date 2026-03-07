@@ -420,6 +420,21 @@ program
   });
 
 program
+  .command('workspace-setup [dir]')
+  .description('Set up shared context memory across all sub-projects in a workspace')
+  .option('--dry-run', 'Show what would be linked without making changes')
+  .option('--force', 'Overwrite existing .mcp.json in sub-projects')
+  .action(async (dir, opts) => {
+    const { runWorkspaceSetup } = await import('./workspace-setup.js');
+    try {
+      runWorkspaceSetup(dir || process.cwd(), opts);
+    } catch (error) {
+      console.error(`Error: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+program
   .command('serve')
   .description('Start the MCP server (called by Claude Code)')
   .action(async () => {

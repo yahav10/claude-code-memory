@@ -18,12 +18,12 @@ describe('Analytics Coach', () => {
     mockCreate.mockReset();
   });
 
-  it('generates insights from metrics data', async () => {
+  it('generates structured insights from metrics data', async () => {
     mockCreate.mockResolvedValueOnce({
       content: [{ type: 'text', text: JSON.stringify({
         insights: [
-          'You document alternatives in 80% of decisions — strong practice.',
-          'Consider adding consequences to more decisions for better traceability.',
+          { title: 'Strong Alternatives Coverage', description: 'You document alternatives in 80% of decisions.', category: 'strategy', priority: 'positive' },
+          { title: 'Improve Consequences Tracking', description: 'Consider adding consequences to more decisions.', category: 'docs', priority: 'recommendation' },
         ],
       }) }],
     });
@@ -35,12 +35,19 @@ describe('Analytics Coach', () => {
     });
 
     expect(result.insights).toHaveLength(2);
-    expect(result.insights[0]).toContain('80%');
+    expect(result.insights[0].title).toBe('Strong Alternatives Coverage');
+    expect(result.insights[0].category).toBe('strategy');
+    expect(result.insights[0].priority).toBe('positive');
+    expect(result.insights[1].description).toContain('consequences');
   });
 
   it('returns cached result on second call', async () => {
     mockCreate.mockResolvedValueOnce({
-      content: [{ type: 'text', text: JSON.stringify({ insights: ['Cached insight'] }) }],
+      content: [{ type: 'text', text: JSON.stringify({
+        insights: [
+          { title: 'Cached Insight', description: 'This is cached.', category: 'habits', priority: 'recommendation' },
+        ],
+      }) }],
     });
 
     const first = await generateCoachInsights({

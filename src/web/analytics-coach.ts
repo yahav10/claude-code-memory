@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import type { DecisionQualityMetrics, WorkPatternMetrics, CodebaseMetrics } from './queries.js';
+import type { DecisionQualityMetrics, WorkPatternMetrics, CodebaseMetrics, StructuredInsight } from './queries.js';
 
 export interface CoachInput {
   quality: DecisionQualityMetrics;
@@ -8,20 +8,30 @@ export interface CoachInput {
 }
 
 export interface CoachResult {
-  insights: string[];
+  insights: StructuredInsight[];
   generatedAt: string;
   error?: string;
 }
 
-const COACH_PROMPT = `You are a developer coach analyzing a software developer's architectural decision-making patterns. Based on the metrics below, provide 3-5 specific, actionable insights to help them improve.
+const COACH_PROMPT = `You are a developer coach analyzing a software developer's architectural decision-making patterns. Based on the metrics below, provide exactly 3 structured insights.
 
 Rules:
 - Be specific — reference actual numbers from the data
 - Each insight should suggest a concrete action or highlight a strength
 - Focus on growth: what they're doing well and what they could improve
-- Keep each insight to 1-2 sentences
-- Return JSON only: {"insights": ["insight 1", "insight 2", ...]}
-- No markdown fences`;
+- Keep descriptions to 1-2 sentences
+- Return JSON only, no markdown fences
+
+Categories (pick the most relevant for each insight): "strategy", "habits", "docs", "architecture", "testing", "performance"
+
+Priority levels: "high" (needs attention), "positive" (doing well), "recommendation" (suggestion)
+
+Return format:
+{"insights": [
+  {"title": "Short Title", "description": "1-2 sentence explanation with specific numbers", "category": "strategy", "priority": "high"},
+  {"title": "Short Title", "description": "...", "category": "habits", "priority": "positive"},
+  {"title": "Short Title", "description": "...", "category": "docs", "priority": "recommendation"}
+]}`;
 
 let clientInstance: Anthropic | null = null;
 let cache: { result: CoachResult; expiry: number } | null = null;
@@ -74,8 +84,17 @@ CODEBASE:
     const jsonText = text.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
     const parsed = JSON.parse(jsonText);
 
+    const insights: StructuredInsight[] = Array.isArray(parsed.insights)
+      ? parsed.insights.map((i: any) => ({
+          title: i.title || 'Insight',
+          description: i.description || '',
+          category: i.category || 'strategy',
+          priority: i.priority || 'recommendation',
+        }))
+      : [];
+
     const result: CoachResult = {
-      insights: Array.isArray(parsed.insights) ? parsed.insights : [],
+      insights,
       generatedAt: new Date().toISOString(),
     };
 

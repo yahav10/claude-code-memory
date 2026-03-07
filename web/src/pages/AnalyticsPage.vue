@@ -10,7 +10,27 @@ import { CanvasRenderer } from 'echarts/renderers';
 use([BarChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer]);
 
 const store = useAnalyticsStore();
-onMounted(() => store.fetchAnalytics());
+onMounted(() => {
+  store.fetchAnalytics();
+  store.loadLatestCoach();
+});
+
+// Map category → icon + color
+const categoryConfig: Record<string, { icon: string; color: string }> = {
+  strategy: { icon: 'lightbulb', color: 'text-amber-400' },
+  habits: { icon: 'build', color: 'text-blue-400' },
+  docs: { icon: 'description', color: 'text-emerald-400' },
+  architecture: { icon: 'account_tree', color: 'text-violet-400' },
+  testing: { icon: 'bug_report', color: 'text-orange-400' },
+  performance: { icon: 'speed', color: 'text-rose-400' },
+};
+
+// Map priority → badge style
+const priorityConfig: Record<string, { label: string; bg: string; text: string; dot: string }> = {
+  high: { label: 'High Priority', bg: 'bg-red-500/10 border-red-500/30', text: 'text-red-400', dot: 'bg-red-400' },
+  positive: { label: 'Great Progress', bg: 'bg-emerald-500/10 border-emerald-500/30', text: 'text-emerald-400', dot: 'bg-emerald-400' },
+  recommendation: { label: 'Recommendation', bg: 'bg-primary/10 border-primary/30', text: 'text-primary', dot: 'bg-primary' },
+};
 
 // --- Decision Quality computed helpers ---
 
@@ -97,59 +117,86 @@ const radarBars = computed(() => {
 
       <template v-else-if="store.quality">
         <!-- 1. AI Coach Summary -->
-        <section class="relative">
-          <div class="absolute -inset-1 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-xl blur-lg opacity-50"></div>
-          <div class="relative bg-bg-dark/60 border border-primary/30 rounded-xl p-6 backdrop-blur-sm overflow-hidden">
-            <div class="absolute top-0 right-0 p-8 opacity-10">
-              <span class="material-symbols-outlined text-8xl text-primary">psychology</span>
+        <section>
+          <!-- Header row -->
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 class="text-2xl font-black text-slate-100 tracking-tight">AI Coach Summary</h2>
+              <p class="text-slate-500 text-sm mt-1">Real-time actionable insights parsed from your development workflow and commit patterns.</p>
             </div>
-            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-              <div class="space-y-4 max-w-2xl">
-                <div class="flex items-center gap-2">
-                  <span class="material-symbols-outlined text-primary">auto_awesome</span>
-                  <h2 class="text-lg font-bold text-slate-100 uppercase tracking-wider">AI Coach Summary</h2>
+            <button
+              @click="store.fetchCoach()"
+              :disabled="store.coachLoading"
+              class="relative z-10 flex items-center gap-2 whitespace-nowrap bg-bg-dark/60 border border-primary/30 hover:bg-primary/10 hover:border-primary text-slate-200 px-5 py-3 rounded-lg font-bold text-sm transition-all"
+              :class="{ 'opacity-50 cursor-wait': store.coachLoading }"
+            >
+              <span class="material-symbols-outlined text-[18px]" :class="{ 'animate-spin': store.coachLoading }">{{ store.coachLoading ? 'progress_activity' : 'refresh' }}</span>
+              {{ store.coachLoading ? 'Generating...' : 'Generate New Summary' }}
+            </button>
+          </div>
+
+          <!-- Coach error -->
+          <div v-if="store.coach?.error" class="bg-bg-dark/40 border border-red-500/20 rounded-xl p-6 mb-6">
+            <p class="text-sm text-red-400">{{ store.coach.error }}</p>
+            <p class="text-xs text-slate-500 mt-2">
+              Configure your API key in <router-link to="/settings#api-key" class="text-primary hover:underline">Settings</router-link>.
+            </p>
+          </div>
+
+          <!-- Loading state -->
+          <div v-else-if="store.coachLoading && !store.coach?.insights?.length" class="bg-bg-dark/40 border border-primary/10 rounded-xl p-12 flex items-center justify-center">
+            <div class="flex items-center gap-3 text-primary/60">
+              <span class="material-symbols-outlined animate-spin">progress_activity</span>
+              <span class="text-sm font-medium">Analyzing your patterns...</span>
+            </div>
+          </div>
+
+          <!-- Insight cards -->
+          <div v-else-if="store.coach?.insights?.length > 0" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div v-for="(insight, i) in store.coach.insights" :key="i"
+              class="bg-bg-dark/40 border border-primary/10 rounded-xl p-6 flex flex-col">
+              <!-- Top: Icon + Category badge -->
+              <div class="flex items-start justify-between mb-5">
+                <div class="w-12 h-12 rounded-xl bg-bg-dark/80 border border-primary/10 flex items-center justify-center">
+                  <span class="material-symbols-outlined text-2xl" :class="(categoryConfig[insight.category] || categoryConfig.strategy).color">
+                    {{ (categoryConfig[insight.category] || categoryConfig.strategy).icon }}
+                  </span>
                 </div>
-
-                <!-- Coach insights (loaded) -->
-                <template v-if="store.coach?.insights?.length > 0">
-                  <p class="text-slate-300 leading-relaxed">Based on your last {{ store.quality.totalDecisions }} decisions, here are key patterns identified in your workflow:</p>
-                  <ul class="space-y-3">
-                    <li v-for="(insight, i) in store.coach.insights" :key="i" class="flex items-start gap-3">
-                      <span class="mt-1 w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_5px_#0df2f2] flex-shrink-0"></span>
-                      <span class="text-sm text-slate-400">{{ insight }}</span>
-                    </li>
-                  </ul>
-                </template>
-
-                <!-- Coach error -->
-                <div v-else-if="store.coach?.error" class="text-sm text-red-400">
-                  {{ store.coach.error }}
-                  <p class="text-xs text-slate-500 mt-1">Make sure ANTHROPIC_API_KEY is set.</p>
-                </div>
-
-                <!-- Default state -->
-                <p v-else-if="!store.coachLoading" class="text-sm text-slate-500">Click "Generate New Summary" to get AI-powered coaching insights from your decision patterns.</p>
-
-                <!-- Loading state -->
-                <div v-if="store.coachLoading" class="flex items-center gap-2 text-sm text-primary/60">
-                  <span class="material-symbols-outlined animate-spin text-sm">progress_activity</span>
-                  Analyzing your patterns...
-                </div>
+                <span class="text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded border"
+                  :class="(categoryConfig[insight.category] || categoryConfig.strategy).color + ' border-current/20 bg-current/5'">
+                  {{ insight.category }}
+                </span>
               </div>
 
-              <button
-                @click="store.fetchCoach()"
-                :disabled="store.coachLoading"
-                class="whitespace-nowrap bg-primary/10 border border-primary hover:bg-primary hover:text-bg-dark text-primary px-5 py-3 rounded-lg font-bold text-sm transition-all"
-                :class="{ 'opacity-50 cursor-wait': store.coachLoading }"
-              >
-                {{ store.coachLoading ? 'Generating...' : store.coach ? 'Generate New Summary' : 'Generate New Summary' }}
-              </button>
+              <!-- Title + Description -->
+              <h3 class="font-bold text-white text-lg mb-2 leading-snug">{{ insight.title }}</h3>
+              <p class="text-sm text-slate-400 leading-relaxed flex-1">{{ insight.description }}</p>
+
+              <!-- Priority badge -->
+              <div class="mt-5">
+                <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border"
+                  :class="(priorityConfig[insight.priority] || priorityConfig.recommendation).bg + ' ' + (priorityConfig[insight.priority] || priorityConfig.recommendation).text">
+                  <span class="w-1.5 h-1.5 rounded-full" :class="(priorityConfig[insight.priority] || priorityConfig.recommendation).dot"></span>
+                  {{ (priorityConfig[insight.priority] || priorityConfig.recommendation).label }}
+                </span>
+              </div>
             </div>
+          </div>
+
+          <!-- Default state (no insights yet) -->
+          <div v-else class="bg-bg-dark/40 border border-primary/10 border-dashed rounded-xl p-12 text-center">
+            <span class="material-symbols-outlined text-4xl text-slate-600 mb-3">psychology</span>
+            <p class="text-sm text-slate-500">Click "Generate New Summary" to get AI-powered coaching insights from your decision patterns.</p>
           </div>
         </section>
 
-        <!-- 2. Decision Quality Insights — 4 cards matching mock layout -->
+        <!-- 2. Detailed Metrics -->
+        <div class="flex items-center justify-between">
+          <h2 class="text-2xl font-black text-slate-100 tracking-tight">Detailed Metrics</h2>
+          <router-link to="/decisions" class="text-sm font-semibold text-primary hover:underline">View All Data</router-link>
+        </div>
+
+        <!-- Decision Quality Insights — 4 cards -->
         <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <!-- Alternatives Coverage — Donut -->
           <div class="bg-bg-dark/40 border border-primary/10 p-5 rounded-xl flex flex-col items-center text-center">

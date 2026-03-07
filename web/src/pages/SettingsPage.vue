@@ -6,8 +6,14 @@ const store = useSettingsStore();
 const vacuuming = ref(false);
 const rebuilding = ref(false);
 const showResetConfirm = ref(false);
+const apiKeyInput = ref('');
+const savingKey = ref(false);
+const keySaved = ref(false);
 
-onMounted(() => store.fetchDatabaseInfo());
+onMounted(() => {
+  store.fetchDatabaseInfo();
+  store.fetchApiKeyStatus();
+});
 
 const db = computed(() => store.dbInfo);
 
@@ -25,6 +31,22 @@ async function doVacuum() {
 async function doRebuild() {
   rebuilding.value = true;
   try { await store.rebuildFts(); } finally { rebuilding.value = false; }
+}
+
+async function saveApiKey() {
+  if (!apiKeyInput.value.trim()) return;
+  savingKey.value = true;
+  keySaved.value = false;
+  try {
+    await store.saveApiKey(apiKeyInput.value.trim());
+    apiKeyInput.value = '';
+    keySaved.value = true;
+    setTimeout(() => keySaved.value = false, 3000);
+  } finally { savingKey.value = false; }
+}
+
+async function removeApiKey() {
+  await store.removeApiKey();
 }
 </script>
 
@@ -92,6 +114,47 @@ async function doRebuild() {
               <dd class="text-sm text-white font-bold">{{ db.decisionCount }} decisions, {{ db.sessionCount }} sessions</dd>
             </div>
           </dl>
+        </div>
+      </div>
+
+      <!-- API Key Configuration -->
+      <div class="bg-bg-dark/40 rounded-xl cyber-border p-6 mb-8" id="api-key">
+        <div class="flex items-center gap-3 mb-6">
+          <span class="material-symbols-outlined text-primary">key</span>
+          <h3 class="font-bold text-lg text-white">Anthropic API Key</h3>
+        </div>
+        <p class="text-sm text-slate-400 mb-4">Required for the AI Coach feature on the Insights page. Your key is stored locally in the database and never sent anywhere except Anthropic's API.</p>
+
+        <!-- Current status -->
+        <div v-if="store.apiKeyStatus?.configured" class="flex items-center justify-between p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg mb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]"></div>
+            <span class="text-sm text-emerald-400 font-medium">Key configured</span>
+            <span class="text-xs text-slate-500 font-mono">{{ store.apiKeyStatus.maskedKey }}</span>
+          </div>
+          <button @click="removeApiKey" class="text-xs text-red-400 hover:text-red-300 transition-colors">Remove</button>
+        </div>
+
+        <!-- Input form -->
+        <div class="flex gap-3">
+          <input
+            v-model="apiKeyInput"
+            type="password"
+            placeholder="sk-ant-api03-..."
+            class="flex-1 bg-bg-dark border border-primary/20 rounded-lg px-4 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-primary/50 transition-colors font-mono"
+            @keydown.enter="saveApiKey"
+          />
+          <button
+            @click="saveApiKey"
+            :disabled="!apiKeyInput.trim() || savingKey"
+            class="bg-primary hover:bg-primary/80 disabled:bg-primary/30 disabled:cursor-not-allowed text-bg-dark px-6 py-2.5 rounded-lg font-bold text-sm transition-all"
+          >
+            {{ savingKey ? 'Saving...' : store.apiKeyStatus?.configured ? 'Update Key' : 'Save Key' }}
+          </button>
+        </div>
+        <div v-if="keySaved" class="mt-3 text-xs text-emerald-400 flex items-center gap-1">
+          <span class="material-symbols-outlined text-sm">check_circle</span>
+          API key saved successfully
         </div>
       </div>
 

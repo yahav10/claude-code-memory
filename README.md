@@ -113,9 +113,22 @@ Restart Claude Code. **That's it.** 🎉
 | Command | Description |
 |---------|-------------|
 | `npx claude-code-memory init` | 🏁 Initialize project memory |
+| `npx claude-code-memory workspace-setup [dir]` | 🔗 Share context memory across all sub-projects in a workspace |
 | `npx claude-code-memory export` | 📤 Export decisions (JSON/Markdown/CSV) |
 | `npx claude-code-memory import <file>` | 📥 Import decisions from JSON |
 | `npx claude-code-memory stats` | 📊 Show memory statistics |
+
+### Workspace Setup
+
+If you have a monorepo or workspace with multiple sub-projects (each with their own `.git`), use `workspace-setup` to share context memory across all of them:
+
+```bash
+npx claude-code-memory workspace-setup /path/to/workspace
+npx claude-code-memory workspace-setup --dry-run   # Preview changes
+npx claude-code-memory workspace-setup --force      # Overwrite existing configs
+```
+
+This symlinks the root `.mcp.json` into every git sub-project so they all share the same decision history.
 
 ### Export Formats
 

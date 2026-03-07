@@ -448,3 +448,53 @@ export function getCodebaseMetrics(db: Database.Database): CodebaseMetrics {
 
   return { hotspots, topTags, totalFiles };
 }
+
+// --- Settings key-value store ---
+
+export function getSetting(db: Database.Database, key: string): string | null {
+  const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(key) as { value: string } | undefined;
+  return row?.value ?? null;
+}
+
+export function setSetting(db: Database.Database, key: string, value: string): void {
+  db.prepare('INSERT INTO settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP').run(key, value);
+}
+
+export function deleteSetting(db: Database.Database, key: string): void {
+  db.prepare('DELETE FROM settings WHERE key = ?').run(key);
+}
+
+// --- Coach Summaries ---
+
+export interface StructuredInsight {
+  title: string;
+  description: string;
+  category: string;
+  priority: string;
+}
+
+export interface CoachSummaryRow {
+  id: number;
+  insights: string; // JSON
+  metrics_snapshot: string | null; // JSON
+  created_at: string;
+}
+
+export function saveCoachSummary(db: Database.Database, insights: StructuredInsight[], metricsSnapshot?: object): number {
+  const result = db.prepare(
+    'INSERT INTO coach_summaries (insights, metrics_snapshot) VALUES (?, ?)'
+  ).run(JSON.stringify(insights), metricsSnapshot ? JSON.stringify(metricsSnapshot) : null);
+  return result.lastInsertRowid as number;
+}
+
+export function getCoachSummaries(db: Database.Database, limit = 20): CoachSummaryRow[] {
+  return db.prepare(
+    'SELECT id, insights, metrics_snapshot, created_at FROM coach_summaries ORDER BY created_at DESC LIMIT ?'
+  ).all(limit) as CoachSummaryRow[];
+}
+
+export function getLatestCoachSummary(db: Database.Database): CoachSummaryRow | null {
+  return (db.prepare(
+    'SELECT id, insights, metrics_snapshot, created_at FROM coach_summaries ORDER BY created_at DESC LIMIT 1'
+  ).get() as CoachSummaryRow) || null;
+}

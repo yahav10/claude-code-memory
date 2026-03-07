@@ -48,9 +48,16 @@ export const api = {
       body: JSON.stringify(opts || {}),
     }),
 
+  // API Key
+  getApiKeyStatus: () => fetchJson<any>('/settings/api-key'),
+  saveApiKey: (apiKey: string) => fetchJson<any>('/settings/api-key', { method: 'PUT', body: JSON.stringify({ apiKey }) }),
+  removeApiKey: () => fetchJson<any>('/settings/api-key', { method: 'PUT', body: JSON.stringify({}) }),
+
   // Analytics
   getAnalyticsQuality: () => fetchJson<any>('/analytics/quality'),
   getAnalyticsPatterns: () => fetchJson<any>('/analytics/patterns'),
   getAnalyticsCodebase: () => fetchJson<any>('/analytics/codebase'),
   getAnalyticsCoach: () => fetchJson<any>('/analytics/coach', { method: 'POST' }),
+  getCoachLatest: () => fetchJson<any>('/analytics/coach/latest'),
+  getCoachHistory: (limit = 20) => fetchJson<any[]>(`/analytics/coach/history?limit=${limit}`),
 };

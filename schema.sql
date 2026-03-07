@@ -65,3 +65,16 @@ CREATE INDEX IF NOT EXISTS idx_decisions_session ON decisions(session_id);
 CREATE INDEX IF NOT EXISTS idx_decisions_created ON decisions(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_decision_files_decision ON decision_files(decision_id);
 CREATE INDEX IF NOT EXISTS idx_decision_files_file ON decision_files(file_path);
+
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS coach_summaries (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  insights TEXT NOT NULL,
+  metrics_snapshot TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

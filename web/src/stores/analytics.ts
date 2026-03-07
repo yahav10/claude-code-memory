@@ -41,5 +41,17 @@ export const useAnalyticsStore = defineStore('analytics', () => {
     }
   }
 
-  return { quality, patterns, codebase, coach, loading, coachLoading, error, fetchAnalytics, fetchCoach };
+  async function loadLatestCoach() {
+    try {
+      const latest = await api.getCoachLatest();
+      if (latest) {
+        coach.value = {
+          insights: latest.insights,
+          generatedAt: latest.createdAt,
+        };
+      }
+    } catch { /* no saved summary yet */ }
+  }
+
+  return { quality, patterns, codebase, coach, loading, coachLoading, error, fetchAnalytics, fetchCoach, loadLatestCoach };
 });

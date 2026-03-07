@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Claude Code Memory - Insights</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0df2f2",
+                        "background-light": "#f5f8f8",
+                        "background-dark": "#102222",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display selection:bg-primary/30">
+<div class="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden">
+<div class="layout-container flex h-full grow flex-col">
+<!-- Top Navigation Bar -->
+<header class="flex items-center justify-between border-b border-primary/10 bg-background-dark/80 backdrop-blur-md px-6 py-4 sticky top-0 z-50">
+<div class="flex items-center gap-4">
+<div class="text-primary">
+<span class="material-symbols-outlined text-3xl">memory</span>
+</div>
+<h2 class="text-xl font-bold leading-tight tracking-tight">Claude Code Memory</h2>
+</div>
+<div class="flex flex-1 justify-end gap-6 items-center">
+<label class="hidden md:flex flex-col min-w-40 h-10 max-w-64">
+<div class="flex w-full flex-1 items-stretch rounded-lg bg-primary/5 border border-primary/20 overflow-hidden focus-within:border-primary">
+<div class="flex items-center justify-center pl-3 text-primary/60">
+<span class="material-symbols-outlined text-[20px]">search</span>
+</div>
+<input class="w-full bg-transparent border-none text-slate-100 focus:ring-0 placeholder:text-primary/40 px-3 text-sm font-normal" placeholder="Search patterns..."/>
+</div>
+</label>
+<div class="flex gap-2">
+<button class="flex items-center justify-center rounded-lg h-10 w-10 bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+</button>
+<button class="flex items-center justify-center rounded-lg h-10 w-10 bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+</button>
+</div>
+<div class="bg-primary/20 border border-primary/40 rounded-full h-10 w-10 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="User avatar placeholder" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAokP3N9wxy9D1_mmU8CbbiFHb17dUDmJLl2IXb_br3gvcTxZjGKrNnFQNrGuQctmMdHQp55RpF7bGd1v7bbs4njnYwrahassbJoSdI6X3ongmSY8osqDfPTrOT8U9gDaB1BmabkkNPl94hMTl0uE63d0q632a7mi4LIqWFMOhWNEijvVdvK5vLb5FlSiJZSFlcPp-QpmcE3hcTACnddz9DUDYSVZ97WXwZYYOMK_EZJmOchw8BCgRkazm-03QA0W1mehpKO9JFtYA"/>
+</div>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<!-- Sidebar Navigation -->
+<aside class="hidden lg:flex w-64 flex-col border-r border-primary/10 bg-background-dark/40 p-4 gap-6">
+<div class="flex flex-col gap-1">
+<p class="px-3 text-[10px] font-bold uppercase tracking-widest text-primary/50 mb-2">Workspace</p>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-400 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-sm font-medium">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-400 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">description</span>
+<span class="text-sm font-medium">Decisions</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-400 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">folder</span>
+<span class="text-sm font-medium">Projects</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 bg-primary/20 text-primary border border-primary/20 rounded-lg shadow-[0_0_15px_rgba(13,242,242,0.1)]" href="#">
+<span class="material-symbols-outlined">bar_chart</span>
+<span class="text-sm font-medium">Insights</span>
+</a>
+</div>
+<div class="mt-auto">
+<div class="rounded-xl bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 p-4">
+<p class="text-xs text-primary font-bold mb-2">Memory Usage</p>
+<div class="w-full h-1 bg-primary/10 rounded-full mb-3">
+<div class="w-[65%] h-full bg-primary rounded-full shadow-[0_0_8px_#0df2f2]"></div>
+</div>
+<p class="text-[10px] text-slate-400">1.2GB of 2GB sync cache</p>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 overflow-y-auto p-6 lg:p-10">
+<div class="max-w-6xl mx-auto space-y-8">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div>
+<h1 class="text-3xl font-black text-slate-100 tracking-tight">Developer Intelligence</h1>
+<p class="text-primary/60 font-medium">Actionable intelligence from your decision history</p>
+</div>
+<button class="flex items-center gap-2 bg-primary hover:bg-primary/80 text-background-dark px-6 py-2.5 rounded-lg font-bold text-sm transition-all shadow-[0_0_20px_rgba(13,242,242,0.3)]">
+<span class="material-symbols-outlined text-[18px]">ios_share</span>
+                                Export Analysis
+                            </button>
+</div>
+<!-- 1. AI Coach Summary Card -->
+<section class="relative">
+<div class="absolute -inset-1 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-xl blur-lg opacity-50"></div>
+<div class="relative bg-background-dark/60 border border-primary/30 rounded-xl p-6 backdrop-blur-sm overflow-hidden">
+<div class="absolute top-0 right-0 p-8 opacity-10">
+<span class="material-symbols-outlined text-8xl text-primary">psychology</span>
+</div>
+<div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+<div class="space-y-4 max-w-2xl">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">auto_awesome</span>
+<h2 class="text-lg font-bold text-slate-100 uppercase tracking-wider">AI Coach Summary</h2>
+</div>
+<p class="text-slate-300 leading-relaxed">Based on your last 50 decisions, here are key patterns identified in your workflow:</p>
+<ul class="space-y-3">
+<li class="flex items-start gap-3">
+<span class="mt-1 w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_5px_#0df2f2]"></span>
+<span class="text-sm text-slate-400">You're revisiting <strong class="text-primary/80">state management</strong> decisions frequently (3 times this week), suggesting a potential structural misalignment.</span>
+</li>
+<li class="flex items-start gap-3">
+<span class="mt-1 w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_5px_#0df2f2]"></span>
+<span class="text-sm text-slate-400"><strong class="text-primary/80">70%</strong> of your decisions lack documented alternatives; consider evaluating trade-offs explicitly.</span>
+</li>
+<li class="flex items-start gap-3">
+<span class="mt-1 w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_5px_#0df2f2]"></span>
+<span class="text-sm text-slate-400">Rationale depth has increased by <strong class="text-primary/80">15%</strong> since last month, showing improved architectural clarity.</span>
+</li>
+</ul>
+</div>
+<button class="whitespace-nowrap bg-primary/10 border border-primary hover:bg-primary hover:text-background-dark text-primary px-5 py-3 rounded-lg font-bold text-sm transition-all">
+                                        Generate New Summary
+                                    </button>
+</div>
+</div>
+</section>
+<!-- 2. Decision Quality Insights -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+<div class="bg-background-dark/40 border border-primary/10 p-5 rounded-xl flex flex-col items-center text-center">
+<div class="text-[10px] font-bold text-primary/50 uppercase tracking-widest mb-4">Alternatives Coverage</div>
+<div class="relative size-24 mb-4">
+<svg class="size-full" viewbox="0 0 36 36">
+<circle class="stroke-primary/10" cx="18" cy="18" fill="none" r="16" stroke-width="3"></circle>
+<circle class="stroke-primary" cx="18" cy="18" fill="none" r="16" stroke-dasharray="30, 100" stroke-linecap="round" stroke-width="3"></circle>
+</svg>
+<div class="absolute inset-0 flex items-center justify-center font-bold text-xl text-slate-100">30%</div>
+</div>
+<p class="text-xs text-slate-500">Industry avg: 65%</p>
+</div>
+<div class="bg-background-dark/40 border border-primary/10 p-5 rounded-xl flex flex-col items-center text-center">
+<div class="text-[10px] font-bold text-primary/50 uppercase tracking-widest mb-4">Rationale Depth</div>
+<div class="text-3xl font-black text-primary mb-1">452</div>
+<div class="text-[10px] text-slate-400 mb-4">Avg Chars / Decision</div>
+<div class="w-full bg-primary/10 h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[75%]"></div>
+</div>
+</div>
+<div class="bg-background-dark/40 border border-primary/10 p-5 rounded-xl flex flex-col items-center text-center">
+<div class="text-[10px] font-bold text-primary/50 uppercase tracking-widest mb-4">Consequences Tracking</div>
+<div class="text-3xl font-black text-primary mb-1">82%</div>
+<div class="text-[10px] text-slate-400 mb-4">Tagged with Outcome</div>
+<div class="flex gap-1">
+<div class="w-3 h-3 rounded-full bg-primary"></div>
+<div class="w-3 h-3 rounded-full bg-primary"></div>
+<div class="w-3 h-3 rounded-full bg-primary"></div>
+<div class="w-3 h-3 rounded-full bg-primary"></div>
+<div class="w-3 h-3 rounded-full bg-primary/20"></div>
+</div>
+</div>
+<div class="bg-background-dark/40 border border-primary/10 p-5 rounded-xl flex flex-col items-center text-center">
+<div class="text-[10px] font-bold text-primary/50 uppercase tracking-widest mb-4">Decision Revisit Rate</div>
+<div class="text-3xl font-black text-primary mb-1">12%</div>
+<div class="text-[10px] text-slate-400 mb-4">Stability Index</div>
+<span class="material-symbols-outlined text-primary/60 text-4xl">trending_down</span>
+</div>
+</section>
+<!-- 3. Work Patterns -->
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+<div class="bg-background-dark/40 border border-primary/10 p-6 rounded-xl">
+<div class="flex justify-between items-center mb-8">
+<h3 class="text-sm font-bold text-slate-100">Session Complexity Trend</h3>
+<span class="text-[10px] font-bold text-primary px-2 py-0.5 border border-primary/30 rounded">30 DAYS</span>
+</div>
+<div class="h-48 flex items-end justify-between gap-1">
+<!-- Simulated Line/Bar Chart Area -->
+<div class="bg-primary/20 w-full h-[20%] rounded-t-sm relative group hover:bg-primary/40 transition-all cursor-pointer"><div class="absolute -top-6 left-1/2 -translate-x-1/2 hidden group-hover:block bg-background-dark text-[10px] p-1 border border-primary/20">Low</div></div>
+<div class="bg-primary/30 w-full h-[35%] rounded-t-sm"></div>
+<div class="bg-primary/20 w-full h-[25%] rounded-t-sm"></div>
+<div class="bg-primary/50 w-full h-[60%] rounded-t-sm"></div>
+<div class="bg-primary/40 w-full h-[45%] rounded-t-sm"></div>
+<div class="bg-primary w-full h-[90%] rounded-t-sm shadow-[0_0_10px_rgba(13,242,242,0.3)]"></div>
+<div class="bg-primary/60 w-full h-[55%] rounded-t-sm"></div>
+<div class="bg-primary/40 w-full h-[30%] rounded-t-sm"></div>
+<div class="bg-primary/20 w-full h-[20%] rounded-t-sm"></div>
+<div class="bg-primary/50 w-full h-[75%] rounded-t-sm"></div>
+<div class="bg-primary/30 w-full h-[40%] rounded-t-sm"></div>
+<div class="bg-primary/40 w-full h-[50%] rounded-t-sm"></div>
+</div>
+<div class="flex justify-between mt-2 text-[10px] text-slate-500 font-bold">
+<span>WEEK 1</span>
+<span>WEEK 2</span>
+<span>WEEK 3</span>
+<span>WEEK 4</span>
+</div>
+</div>
+<div class="bg-background-dark/40 border border-primary/10 p-6 rounded-xl">
+<h3 class="text-sm font-bold text-slate-100 mb-6">Technology Radar</h3>
+<div class="space-y-4">
+<div class="flex items-center gap-4">
+<span class="text-xs font-medium w-16 text-slate-400">React</span>
+<div class="flex-1 bg-primary/10 h-2 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[88%] shadow-[0_0_8px_#0df2f2]"></div>
+</div>
+<span class="text-xs font-bold text-primary">88%</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="text-xs font-medium w-16 text-slate-400">Tailwind</span>
+<div class="flex-1 bg-primary/10 h-2 rounded-full overflow-hidden">
+<div class="bg-primary/60 h-full w-[65%]"></div>
+</div>
+<span class="text-xs font-bold text-primary/60">65%</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="text-xs font-medium w-16 text-slate-400">Node.js</span>
+<div class="flex-1 bg-primary/10 h-2 rounded-full overflow-hidden">
+<div class="bg-primary/40 h-full w-[42%]"></div>
+</div>
+<span class="text-xs font-bold text-primary/40">42%</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="text-xs font-medium w-16 text-slate-400">SQLite</span>
+<div class="flex-1 bg-primary/10 h-2 rounded-full overflow-hidden">
+<div class="bg-primary/20 h-full w-[12%]"></div>
+</div>
+<span class="text-xs font-bold text-primary/20">12%</span>
+</div>
+</div>
+<div class="mt-8 pt-4 border-t border-primary/5 flex items-center justify-between">
+<p class="text-[10px] text-slate-500 italic">"Shift toward serverless architecture noted in last 14 days"</p>
+<span class="material-symbols-outlined text-primary text-sm">info</span>
+</div>
+</div>
+</section>
+<!-- 4. Codebase Knowledge -->
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Architecture Hotspots -->
+<div class="bg-background-dark/40 border border-primary/10 p-6 rounded-xl lg:col-span-1">
+<h3 class="text-sm font-bold text-slate-100 mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-sm">local_fire_department</span>
+                                    Architecture Hotspots
+                                </h3>
+<div class="space-y-4">
+<div class="flex items-center justify-between group cursor-default">
+<div class="flex flex-col">
+<span class="text-xs font-medium text-slate-200">/src/store/index.ts</span>
+<span class="text-[10px] text-slate-500">State Management</span>
+</div>
+<span class="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded">24 Decisions</span>
+</div>
+<div class="flex items-center justify-between group cursor-default">
+<div class="flex flex-col">
+<span class="text-xs font-medium text-slate-200">/api/middleware.ts</span>
+<span class="text-[10px] text-slate-500">Security / Auth</span>
+</div>
+<span class="text-xs font-bold text-primary/70 bg-primary/5 px-2 py-1 rounded">18 Decisions</span>
+</div>
+<div class="flex items-center justify-between group cursor-default">
+<div class="flex flex-col">
+<span class="text-xs font-medium text-slate-200">/components/Layout.tsx</span>
+<span class="text-[10px] text-slate-500">Structural</span>
+</div>
+<span class="text-xs font-bold text-primary/50 bg-primary/5 px-2 py-1 rounded">12 Decisions</span>
+</div>
+</div>
+</div>
+<!-- Undocumented Zones -->
+<div class="bg-background-dark/40 border border-primary/10 p-6 rounded-xl lg:col-span-1">
+<h3 class="text-sm font-bold text-slate-100 mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-sm">visibility_off</span>
+                                    Undocumented Zones
+                                </h3>
+<div class="space-y-3">
+<div class="p-3 bg-red-500/5 border border-red-500/20 rounded-lg">
+<p class="text-[10px] font-bold text-red-400 mb-1 uppercase">High Complexity / No Memory</p>
+<p class="text-xs text-slate-300 font-medium">/legacy-services/payment-v1</p>
+</div>
+<div class="p-3 bg-primary/5 border border-primary/10 rounded-lg">
+<p class="text-[10px] font-bold text-primary/50 mb-1 uppercase">Orphaned Logic</p>
+<p class="text-xs text-slate-300 font-medium">/utils/experimental-hooks</p>
+</div>
+<button class="w-full py-2 text-[10px] font-bold text-primary hover:bg-primary/5 rounded border border-dashed border-primary/20 transition-all">
+                                        START DOCUMENTING
+                                    </button>
+</div>
+</div>
+<!-- Cross-Cutting Concerns -->
+<div class="bg-background-dark/40 border border-primary/10 p-6 rounded-xl lg:col-span-1">
+<h3 class="text-sm font-bold text-slate-100 mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-sm">tag</span>
+                                    Cross-Cutting Tags
+                                </h3>
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1.5 bg-primary text-background-dark text-[10px] font-black rounded-full shadow-[0_0_10px_rgba(13,242,242,0.4)]">PERFORMANCE</span>
+<span class="px-3 py-1.5 bg-primary/20 text-primary text-[10px] font-bold border border-primary/30 rounded-full">SECURITY</span>
+<span class="px-3 py-1.5 bg-primary/20 text-primary text-[10px] font-bold border border-primary/30 rounded-full">UX</span>
+<span class="px-3 py-1.5 bg-primary/20 text-primary text-[10px] font-bold border border-primary/30 rounded-full">REFACTOR</span>
+<span class="px-3 py-1.5 bg-primary/20 text-primary text-[10px] font-bold border border-primary/30 rounded-full">DEBT</span>
+<span class="px-3 py-1.5 bg-primary/20 text-primary text-[10px] font-bold border border-primary/30 rounded-full">ACCESSIBILITY</span>
+<span class="px-3 py-1.5 bg-primary/20 text-primary text-[10px] font-bold border border-primary/30 rounded-full">INTERNATIONALIZATION</span>
+</div>
+<div class="mt-8 flex items-center gap-3">
+<div class="size-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-sm">lightbulb</span>
+</div>
+<p class="text-[11px] text-slate-400">"Performance" impacts 4 modules</p>
+</div>
+</div>
+</section>
+</div>
+<!-- Footer Info -->
+<footer class="mt-12 text-center text-slate-500 text-[10px] font-medium tracking-widest uppercase">
+                        Claude Code Memory • Intelligent Development • v2.4.0-stable
+                    </footer>
+</main>
+</div>
+</div>
+</div>
+</body></html>
