@@ -9,6 +9,9 @@ import { handleQueryMemory } from './tools/query-memory.js';
 import { handleListRecent } from './tools/list-recent.js';
 import { handleUpdateDecision } from './tools/update-decision.js';
 import { handleGetStats } from './tools/get-stats.js';
+import { decayConfidence } from './utils/confidence.js';
+import { syncClaudeMd } from './utils/claudemd-sync.js';
+import { findProjectRoot } from './database.js';
 
 const dbPath = getDbPath();
 const db = initDatabase(dbPath);
@@ -16,6 +19,13 @@ const currentSessionId = generateSessionId();
 
 // Register session
 db.prepare('INSERT INTO sessions (id) VALUES (?)').run(currentSessionId);
+
+// Run confidence decay on startup
+const decayResult = decayConfidence(db);
+if (decayResult.updated > 0) {
+  console.error(`[project-memory] Decayed confidence for ${decayResult.updated} decision(s)`);
+}
+
 console.error(`[project-memory] Session ${currentSessionId} started`);
 console.error(`[project-memory] Database: ${dbPath}`);
 
@@ -42,11 +52,21 @@ server.tool(
   async (args) => {
     try {
       const result = handleSaveDecision(db, currentSessionId, args);
+      let text = `Decision saved (ID: ${result.id})\n\nTitle: ${result.title}\nDecision: ${args.decision}\nRationale: ${args.rationale}`;
+
+      if (result.autoSuperseded && result.autoSuperseded.length > 0) {
+        text += `\n\nAuto-superseded similar decision(s): ${result.autoSuperseded.map(id => `#${id}`).join(', ')}`;
+      }
+      if (result.similarDecisions && result.similarDecisions.length > 0) {
+        text += `\n\nSimilar existing decisions found:`;
+        for (const s of result.similarDecisions) {
+          text += `\n  - #${s.id} "${s.title}" (${Math.round(s.similarity * 100)}% similar)`;
+        }
+        text += `\nConsider using update_decision to supersede if this replaces them.`;
+      }
+
       return {
-        content: [{
-          type: 'text' as const,
-          text: `Decision saved (ID: ${result.id})\n\nTitle: ${result.title}\nDecision: ${args.decision}\nRationale: ${args.rationale}`,
-        }],
+        content: [{ type: 'text' as const, text }],
       };
     } catch (error) {
       return {
@@ -169,7 +189,9 @@ server.tool(
       text += `${'─'.repeat(40)}\n`;
       text += `Decisions:  ${stats.totalDecisions} total`;
       if (stats.totalDecisions > 0) {
-        text += ` (${stats.active} active, ${stats.deprecated} deprecated, ${stats.superseded} superseded)`;
+        text += ` (${stats.active} active, ${stats.deprecated} deprecated, ${stats.superseded} superseded`;
+        if (stats.lowConfidence > 0) text += `, ${stats.lowConfidence} fading`;
+        text += `)`;
       }
       text += `\nSessions:   ${stats.totalSessions}\n`;
       text += `Last activity: ${stats.lastActivity || 'none'}\n`;
@@ -177,6 +199,29 @@ server.tool(
         text += `Top tags:   ${stats.topTags.map(t => `${t.tag} (${t.count})`).join(', ')}\n`;
       }
       return { content: [{ type: 'text' as const, text }] };
+    } catch (error) {
+      return {
+        content: [{ type: 'text' as const, text: `Error: ${(error as Error).message}` }],
+      };
+    }
+  },
+);
+
+// --- sync_claude_md ---
+server.tool(
+  'sync_claude_md',
+  'Sync active decisions into CLAUDE.md (auto-generates a decisions section)',
+  {},
+  async () => {
+    try {
+      const projectRoot = process.env.PROJECT_ROOT || findProjectRoot();
+      const result = syncClaudeMd(projectRoot, db);
+      return {
+        content: [{
+          type: 'text' as const,
+          text: `CLAUDE.md updated with ${result.decisionsCount} active decision(s) at ${projectRoot}/CLAUDE.md`,
+        }],
+      };
     } catch (error) {
       return {
         content: [{ type: 'text' as const, text: `Error: ${(error as Error).message}` }],

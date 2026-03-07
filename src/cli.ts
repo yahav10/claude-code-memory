@@ -435,6 +435,29 @@ program
   });
 
 program
+  .command('sync-claudemd')
+  .description('Sync active decisions into CLAUDE.md')
+  .action(async () => {
+    try {
+      const root = findProjectRoot();
+      const dbPath = path.join(root, '.claude', 'project-memory.db');
+      if (!fs.existsSync(dbPath)) {
+        throw new Error('No project memory database found. Run "claude-code-memory init" first.');
+      }
+      const db = initDatabase(dbPath);
+      const { syncClaudeMd } = await import('./utils/claudemd-sync.js');
+      const result = syncClaudeMd(root, db);
+      db.close();
+
+      console.log(`CLAUDE.md updated with ${result.decisionsCount} active decision(s)`);
+      console.log(`  Path: ${path.join(root, 'CLAUDE.md')}`);
+    } catch (error) {
+      console.error(`Error: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+program
   .command('serve')
   .description('Start the MCP server (called by Claude Code)')
   .action(async () => {

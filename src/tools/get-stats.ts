@@ -5,6 +5,7 @@ interface MemoryStats {
   active: number;
   deprecated: number;
   superseded: number;
+  lowConfidence: number;
   totalSessions: number;
   topTags: { tag: string; count: number }[];
   lastActivity: string | null;
@@ -15,6 +16,7 @@ export function handleGetStats(db: Database.Database): MemoryStats {
   const active = db.prepare("SELECT COUNT(*) as count FROM decisions WHERE status = 'active'").get() as { count: number };
   const deprecated = db.prepare("SELECT COUNT(*) as count FROM decisions WHERE status = 'deprecated'").get() as { count: number };
   const superseded = db.prepare("SELECT COUNT(*) as count FROM decisions WHERE status = 'superseded'").get() as { count: number };
+  const lowConfidence = db.prepare("SELECT COUNT(*) as count FROM decisions WHERE status = 'active' AND confidence < 0.3").get() as { count: number };
   const sessions = db.prepare('SELECT COUNT(*) as count FROM sessions').get() as { count: number };
   const lastDecision = db.prepare('SELECT created_at FROM decisions ORDER BY created_at DESC LIMIT 1').get() as { created_at: string } | undefined;
 
@@ -42,6 +44,7 @@ export function handleGetStats(db: Database.Database): MemoryStats {
     active: active.count,
     deprecated: deprecated.count,
     superseded: superseded.count,
+    lowConfidence: lowConfidence.count,
     totalSessions: sessions.count,
     topTags,
     lastActivity: lastDecision?.created_at || null,

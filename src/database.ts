@@ -21,6 +21,7 @@ export function initDatabase(dbPath: string): Database.Database {
   db.exec(schema);
 
   migrateSessionsTable(db);
+  migrateDecisionsTable(db);
 
   return db;
 }
@@ -39,6 +40,15 @@ function migrateSessionsTable(db: Database.Database): void {
 
   for (const [col, sql] of migrations) {
     if (!existing.has(col)) db.exec(sql);
+  }
+}
+
+function migrateDecisionsTable(db: Database.Database): void {
+  const columns = db.pragma('table_info(decisions)') as Array<{ name: string }>;
+  const existing = new Set(columns.map(c => c.name));
+
+  if (!existing.has('confidence')) {
+    db.exec('ALTER TABLE decisions ADD COLUMN confidence REAL DEFAULT 1.0');
   }
 }
 

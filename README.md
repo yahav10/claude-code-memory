@@ -91,11 +91,12 @@ Restart Claude Code. **That's it.** 🎉
 
 | Tool | Description |
 |------|-------------|
-| `save_decision` | 💾 Save an architectural decision with title, rationale, alternatives |
+| `save_decision` | 💾 Save an architectural decision with title, rationale, alternatives. Auto-detects duplicates via Jaccard similarity |
 | `query_memory` | 🔍 Search decisions using natural language |
 | `list_recent` | 📋 List recent decisions across sessions |
 | `update_decision` | ♻️ Deprecate or supersede a decision |
 | `get_stats` | 📊 Get memory statistics (auto-called at session start) |
+| `sync_claude_md` | 📝 Export active decisions into your CLAUDE.md with auto-managed markers |
 
 ## 💬 Query Examples
 
@@ -116,6 +117,7 @@ Restart Claude Code. **That's it.** 🎉
 | `npx claude-code-memory workspace-setup [dir]` | 🔗 Share context memory across all sub-projects in a workspace |
 | `npx claude-code-memory export` | 📤 Export decisions (JSON/Markdown/CSV) |
 | `npx claude-code-memory import <file>` | 📥 Import decisions from JSON |
+| `npx claude-code-memory sync-claudemd` | 📝 Sync active decisions into CLAUDE.md |
 | `npx claude-code-memory stats` | 📊 Show memory statistics |
 
 ### Workspace Setup
@@ -138,6 +140,55 @@ npx claude-code-memory export --format markdown        # Human-readable
 npx claude-code-memory export --format csv             # Spreadsheet
 npx claude-code-memory export --output ./backup.json   # Custom path
 ```
+
+## 🧹 Smart Deduplication
+
+When saving a new decision, the server automatically compares it against existing ones using **Jaccard similarity** on tokenized text:
+
+| Similarity | Action |
+|------------|--------|
+| **> 0.8** | Auto-supersedes the older decision — you don't need to clean up |
+| **0.6 – 0.8** | Returns a warning with similar decisions so you can decide |
+| **< 0.6** | Saved without warnings |
+
+No configuration needed — dedup runs on every `save_decision` call.
+
+## ⏳ Confidence Decay
+
+Decisions tagged `temporary` or `experimental` automatically **fade over 30 days**:
+
+```
+Day  0  → confidence 1.0 (full strength)
+Day 15  → confidence 0.5 (half strength)
+Day 30  → confidence 0.0 (fully faded)
+```
+
+Faded decisions (confidence < 0.3) are excluded from CLAUDE.md sync but remain queryable. Regular decisions **never decay** regardless of age.
+
+## 📝 CLAUDE.md Sync
+
+Auto-generate a structured decisions section in your `CLAUDE.md`:
+
+```bash
+npx claude-code-memory sync-claudemd
+```
+
+Or call `sync_claude_md` as an MCP tool during a conversation. The output is injected between markers:
+
+```markdown
+<!-- DECISIONS:START -->
+## Architectural Decisions
+_Auto-generated from project memory — 5 active decisions_
+
+### Auth
+- **Use JWT for authentication** — Stateless and scalable [auth, security]
+
+### Database
+- **Use PostgreSQL with Prisma** — ACID compliance [database]
+<!-- DECISIONS:END -->
+```
+
+Any content **outside** the markers is preserved. If no markers exist, they're appended. If no `CLAUDE.md` exists, one is created.
 
 ## 🏗️ Architecture
 
