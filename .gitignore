@@ -6,3 +6,4 @@ web/node_modules/
 *.db-wal
 *.db-shm
 .worktrees/
+docs/plans/
