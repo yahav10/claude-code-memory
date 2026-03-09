@@ -1,5 +1,6 @@
 import type Database from 'better-sqlite3';
 import { executeQuery } from '../queries.js';
+import { logQuery } from '../utils/token-savings.js';
 
 interface QueryMemoryArgs {
   query: string;
@@ -18,5 +19,6 @@ export function handleQueryMemory(
   }
 
   const results = executeQuery(db, query, limit, sessionId);
+  logQuery(db, sessionId, query, results.length);
   return { results, query };
 }

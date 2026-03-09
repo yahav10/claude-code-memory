@@ -7,6 +7,7 @@ export const useAnalyticsStore = defineStore('analytics', () => {
   const patterns = ref<any>(null);
   const codebase = ref<any>(null);
   const coach = ref<any>(null);
+  const tokenSavings = ref<any>(null);
   const loading = ref(false);
   const coachLoading = ref(false);
   const error = ref<string | null>(null);
@@ -15,14 +16,16 @@ export const useAnalyticsStore = defineStore('analytics', () => {
     loading.value = true;
     error.value = null;
     try {
-      const [q, p, c] = await Promise.all([
+      const [q, p, c, ts] = await Promise.all([
         api.getAnalyticsQuality(),
         api.getAnalyticsPatterns(),
         api.getAnalyticsCodebase(),
+        api.getTokenSavings(),
       ]);
       quality.value = q;
       patterns.value = p;
       codebase.value = c;
+      tokenSavings.value = ts;
     } catch (e: any) {
       error.value = e.message;
     } finally {
@@ -53,5 +56,5 @@ export const useAnalyticsStore = defineStore('analytics', () => {
     } catch { /* no saved summary yet */ }
   }
 
-  return { quality, patterns, codebase, coach, loading, coachLoading, error, fetchAnalytics, fetchCoach, loadLatestCoach };
+  return { quality, patterns, codebase, coach, tokenSavings, loading, coachLoading, error, fetchAnalytics, fetchCoach, loadLatestCoach };
 });

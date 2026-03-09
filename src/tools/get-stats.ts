@@ -1,6 +1,9 @@
 import type Database from 'better-sqlite3';
+import { getTokenSavings, type TokenSavingsResult } from '../utils/token-savings.js';
+import { getLastSessionContext, detectCurrentWork, getRelevantDecisions, type LastSessionContext, type CurrentWorkContext, type RelevantDecision } from '../utils/session-intelligence.js';
+import { findProjectRoot } from '../database.js';
 
-interface MemoryStats {
+export interface MemoryStats {
   totalDecisions: number;
   active: number;
   deprecated: number;
@@ -9,6 +12,10 @@ interface MemoryStats {
   totalSessions: number;
   topTags: { tag: string; count: number }[];
   lastActivity: string | null;
+  tokenSavings: TokenSavingsResult;
+  lastSession: LastSessionContext | null;
+  currentWork: CurrentWorkContext | null;
+  relevantDecisions: RelevantDecision[];
 }
 
 export function handleGetStats(db: Database.Database): MemoryStats {
@@ -39,6 +46,23 @@ export function handleGetStats(db: Database.Database): MemoryStats {
     .slice(0, 5)
     .map(([tag, count]) => ({ tag, count }));
 
+  const tokenSavings = getTokenSavings(db, 30);
+
+  // Session intelligence
+  const lastSession = getLastSessionContext(db);
+  let currentWork: CurrentWorkContext | null = null;
+  let relevantDecisions: RelevantDecision[] = [];
+
+  try {
+    const projectRoot = process.env.PROJECT_ROOT || findProjectRoot();
+    currentWork = detectCurrentWork(projectRoot);
+    relevantDecisions = getRelevantDecisions(db, {
+      branch: currentWork.branch,
+      modifiedFiles: [...currentWork.modifiedFiles, ...currentWork.stagedFiles],
+      limit: 5,
+    });
+  } catch { /* non-critical */ }
+
   return {
     totalDecisions: total.count,
     active: active.count,
@@ -48,5 +72,9 @@ export function handleGetStats(db: Database.Database): MemoryStats {
     totalSessions: sessions.count,
     topTags,
     lastActivity: lastDecision?.created_at || null,
+    tokenSavings,
+    lastSession,
+    currentWork,
+    relevantDecisions,
   };
 }

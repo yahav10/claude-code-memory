@@ -78,3 +78,15 @@ CREATE TABLE IF NOT EXISTS coach_summaries (
   metrics_snapshot TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS query_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  session_id TEXT,
+  query TEXT NOT NULL,
+  result_count INTEGER DEFAULT 0,
+  estimated_tokens_saved INTEGER DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_query_log_session ON query_log(session_id);
+CREATE INDEX IF NOT EXISTS idx_query_log_created ON query_log(created_at);

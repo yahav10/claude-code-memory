@@ -30,6 +30,16 @@ Use the `save_decision` MCP tool with these fields:
 - "What files are affected by the auth decision?"
 - "Compare Pinia vs Vuex"
 
+## Session Start
+
+Call `get_stats` at the beginning of each session.
+It shows: statistics, last session context, decisions relevant to current work, ROI metrics.
+
+## Session End
+
+Call `review_session` before ending a session.
+It shows: decisions saved, files changed without decisions, suggestions for what to save.
+
 ## Proactive Saving
 
 When you detect an architectural decision during conversation, proactively

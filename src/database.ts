@@ -22,6 +22,7 @@ export function initDatabase(dbPath: string): Database.Database {
 
   migrateSessionsTable(db);
   migrateDecisionsTable(db);
+  migrateQueryLogTable(db);
 
   return db;
 }
@@ -50,6 +51,21 @@ function migrateDecisionsTable(db: Database.Database): void {
   if (!existing.has('confidence')) {
     db.exec('ALTER TABLE decisions ADD COLUMN confidence REAL DEFAULT 1.0');
   }
+}
+
+function migrateQueryLogTable(db: Database.Database): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS query_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id TEXT,
+      query TEXT NOT NULL,
+      result_count INTEGER DEFAULT 0,
+      estimated_tokens_saved INTEGER DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  db.exec('CREATE INDEX IF NOT EXISTS idx_query_log_session ON query_log(session_id)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_query_log_created ON query_log(created_at)');
 }
 
 export function findProjectRoot(): string {

@@ -12,6 +12,8 @@ import { handleGetStats } from './tools/get-stats.js';
 import { decayConfidence } from './utils/confidence.js';
 import { syncClaudeMd } from './utils/claudemd-sync.js';
 import { findProjectRoot } from './database.js';
+import { detectCurrentWork } from './utils/session-intelligence.js';
+import { handleReviewSession } from './tools/review-session.js';
 
 const dbPath = getDbPath();
 const db = initDatabase(dbPath);
@@ -19,6 +21,16 @@ const currentSessionId = generateSessionId();
 
 // Register session
 db.prepare('INSERT INTO sessions (id) VALUES (?)').run(currentSessionId);
+
+// Capture git context at session start
+try {
+  const projectRoot = process.env.PROJECT_ROOT || findProjectRoot();
+  const currentWork = detectCurrentWork(projectRoot);
+  if (currentWork.branch || projectRoot) {
+    db.prepare('UPDATE sessions SET git_branch = ?, project_path = ? WHERE id = ?')
+      .run(currentWork.branch, projectRoot, currentSessionId);
+  }
+} catch { /* non-critical */ }
 
 // Run confidence decay on startup
 const decayResult = decayConfidence(db);
@@ -198,6 +210,44 @@ server.tool(
       if (stats.topTags.length > 0) {
         text += `Top tags:   ${stats.topTags.map(t => `${t.tag} (${t.count})`).join(', ')}\n`;
       }
+      if (stats.tokenSavings.totalQueries > 0) {
+        text += `Memory ROI (30d): ${stats.tokenSavings.totalQueries} queries, ~${stats.tokenSavings.estimatedTokensSaved.toLocaleString()} tokens saved, ~${stats.tokenSavings.estimatedMinutesSaved} min saved\n`;
+      }
+
+      // Last session context
+      if (stats.lastSession) {
+        const s = stats.lastSession;
+        text += `${'─'.repeat(40)}\n`;
+        text += `Last session (${s.hoursAgo}h ago`;
+        if (s.branch) text += `, branch: ${s.branch}`;
+        text += `):\n`;
+        if (s.decisions.length > 0) {
+          text += `  Worked on: ${s.decisions.map(d => d.title).join(', ')}\n`;
+        }
+        text += `  Saved ${s.decisionCount} decision(s)\n`;
+        if (s.affectedFiles.length > 0) {
+          text += `  Files: ${s.affectedFiles.join(', ')}\n`;
+        }
+      }
+
+      // Relevant decisions for current work
+      if (stats.relevantDecisions.length > 0) {
+        text += `${'─'.repeat(40)}\n`;
+        text += `Relevant to current work`;
+        if (stats.currentWork?.branch) {
+          text += ` (branch: ${stats.currentWork.branch}`;
+          if (stats.currentWork.uncommittedChangeCount > 0) {
+            text += `, ${stats.currentWork.uncommittedChangeCount} uncommitted files`;
+          }
+          text += `)`;
+        }
+        text += `:\n`;
+        for (const d of stats.relevantDecisions) {
+          const tags = d.tags.length > 0 ? ` [${d.tags.join(', ')}]` : '';
+          text += `  - ${d.title}${tags} (#${d.id}, ${d.matchReason})\n`;
+        }
+      }
+
       return { content: [{ type: 'text' as const, text }] };
     } catch (error) {
       return {
@@ -230,8 +280,57 @@ server.tool(
   },
 );
 
+// --- review_session ---
+server.tool(
+  'review_session',
+  'Review current session for unsaved decisions — call before ending a session',
+  {},
+  async () => {
+    try {
+      const projectRoot = process.env.PROJECT_ROOT || findProjectRoot();
+      const result = handleReviewSession(db, currentSessionId, projectRoot);
+
+      let text = `Session Review\n${'─'.repeat(40)}\n`;
+      text += `Decisions saved: ${result.decisionCount}`;
+      if (result.decisionCount > 0) {
+        text += ` (${result.decisionsThisSession.map(d => d.title).join(', ')})`;
+      }
+      text += '\n';
+
+      if (result.filesChangedDuringSession.length > 0) {
+        text += `Files changed: ${result.filesChangedDuringSession.length}\n`;
+      }
+
+      if (result.suggestions.length > 0) {
+        text += `\nSuggestions:\n`;
+        for (const s of result.suggestions) {
+          text += `  - ${s}\n`;
+        }
+      } else {
+        text += '\nNo suggestions — session looks well-documented.\n';
+      }
+
+      return { content: [{ type: 'text' as const, text }] };
+    } catch (error) {
+      return {
+        content: [{ type: 'text' as const, text: `Error: ${(error as Error).message}` }],
+      };
+    }
+  },
+);
+
 // --- Graceful shutdown ---
 process.on('SIGINT', () => {
+  // Capture git branch at session end
+  try {
+    const projectRoot = process.env.PROJECT_ROOT || findProjectRoot();
+    const currentWork = detectCurrentWork(projectRoot);
+    if (currentWork.branch) {
+      db.prepare('UPDATE sessions SET git_branch = ? WHERE id = ?')
+        .run(currentWork.branch, currentSessionId);
+    }
+  } catch { /* non-critical */ }
+
   const summary = generateSessionSummary(db, currentSessionId);
   db.prepare('UPDATE sessions SET ended_at = CURRENT_TIMESTAMP, summary = ? WHERE id = ?')
     .run(summary, currentSessionId);

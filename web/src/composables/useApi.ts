@@ -60,4 +60,5 @@ export const api = {
   getAnalyticsCoach: () => fetchJson<any>('/analytics/coach', { method: 'POST' }),
   getCoachLatest: () => fetchJson<any>('/analytics/coach/latest'),
   getCoachHistory: (limit = 20) => fetchJson<any[]>(`/analytics/coach/history?limit=${limit}`),
+  getTokenSavings: (days = 30) => fetchJson<any>(`/analytics/token-savings?days=${days}`),
 };

@@ -190,6 +190,35 @@ const radarBars = computed(() => {
           </div>
         </section>
 
+        <!-- 1.5 Token Savings ROI -->
+        <section v-if="store.tokenSavings && store.tokenSavings.totalQueries > 0">
+          <h2 class="text-2xl font-black text-slate-100 tracking-tight mb-6">Memory ROI</h2>
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-bg-dark/40 border border-primary/10 p-5 rounded-xl flex flex-col items-center text-center">
+              <div class="text-[10px] font-bold text-primary/50 uppercase tracking-widest mb-4">Total Queries</div>
+              <div class="text-3xl font-black text-primary">{{ store.tokenSavings.totalQueries }}</div>
+              <div class="text-[10px] text-slate-400 mt-2">Last 30 days</div>
+            </div>
+            <div class="bg-bg-dark/40 border border-primary/10 p-5 rounded-xl flex flex-col items-center text-center">
+              <div class="text-[10px] font-bold text-primary/50 uppercase tracking-widest mb-4">Hit Rate</div>
+              <div class="text-3xl font-black text-primary">
+                {{ store.tokenSavings.totalQueries > 0 ? Math.round((store.tokenSavings.successfulQueries / store.tokenSavings.totalQueries) * 100) : 0 }}%
+              </div>
+              <div class="text-[10px] text-slate-400 mt-2">Queries with results</div>
+            </div>
+            <div class="bg-bg-dark/40 border border-primary/10 p-5 rounded-xl flex flex-col items-center text-center">
+              <div class="text-[10px] font-bold text-primary/50 uppercase tracking-widest mb-4">Tokens Saved</div>
+              <div class="text-3xl font-black text-primary">~{{ store.tokenSavings.estimatedTokensSaved.toLocaleString() }}</div>
+              <div class="text-[10px] text-slate-400 mt-2">~${{ store.tokenSavings.estimatedCostSaved }}</div>
+            </div>
+            <div class="bg-bg-dark/40 border border-primary/10 p-5 rounded-xl flex flex-col items-center text-center">
+              <div class="text-[10px] font-bold text-primary/50 uppercase tracking-widest mb-4">Time Saved</div>
+              <div class="text-3xl font-black text-primary">~{{ store.tokenSavings.estimatedMinutesSaved }}</div>
+              <div class="text-[10px] text-slate-400 mt-2">minutes of re-explanation</div>
+            </div>
+          </div>
+        </section>
+
         <!-- 2. Detailed Metrics -->
         <div class="flex items-center justify-between">
           <h2 class="text-2xl font-black text-slate-100 tracking-tight">Detailed Metrics</h2>

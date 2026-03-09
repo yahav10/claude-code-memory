@@ -2,8 +2,15 @@ import type { FastifyInstance } from 'fastify';
 import type { AppDeps } from '../server.js';
 import { getDecisionQualityMetrics, getWorkPatternMetrics, getCodebaseMetrics, getSetting, saveCoachSummary, getCoachSummaries, getLatestCoachSummary } from '../queries.js';
 import { generateCoachInsights } from '../analytics-coach.js';
+import { getTokenSavings } from '../../utils/token-savings.js';
 
 export function registerAnalyticsRoutes(app: FastifyInstance, deps: AppDeps) {
+  app.get('/api/analytics/token-savings', async (req) => {
+    const query = req.query as { days?: string };
+    const days = parseInt(query.days || '30', 10);
+    return getTokenSavings(deps.db, days);
+  });
+
   app.get('/api/analytics/quality', async () => {
     return getDecisionQualityMetrics(deps.db);
   });
