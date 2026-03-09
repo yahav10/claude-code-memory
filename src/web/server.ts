@@ -6,6 +6,9 @@ import type Database from 'better-sqlite3';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { existsSync } from 'fs';
+import { homedir } from 'os';
+import { runImportPipeline } from '../import/pipeline.js';
+import { scanForSessions } from '../import/scanner.js';
 import { registerHealthRoutes } from './routes/health.js';
 import { registerDashboardRoutes } from './routes/dashboard.js';
 import { registerDecisionRoutes } from './routes/decisions.js';
@@ -66,5 +69,33 @@ export async function startWebServer(deps: AppDeps, options: { port: number; ope
     exec(`open ${address}`);
   }
 
+  // Auto-import new sessions on startup, then every 5 minutes
+  autoImport(deps.db).catch(() => {});
+  const intervalId = setInterval(() => autoImport(deps.db).catch(() => {}), 5 * 60 * 1000);
+  process.on('SIGINT', () => clearInterval(intervalId));
+  process.on('SIGTERM', () => clearInterval(intervalId));
+
   return app;
+}
+
+async function autoImport(db: Database.Database): Promise<void> {
+  const projectsDir = process.env.CCM_PROJECTS_DIR
+    || join(homedir(), '.claude', 'projects');
+
+  const imported = new Set(
+    db.prepare('SELECT id FROM sessions').all().map((r: any) => r.id),
+  );
+  const scan = await scanForSessions(projectsDir, imported);
+  if (scan.newSessions === 0) return;
+
+  const row = db.prepare("SELECT value FROM settings WHERE key = 'anthropic_api_key'").get() as any;
+  const apiKey = row?.value || process.env.ANTHROPIC_API_KEY;
+
+  await runImportPipeline({
+    db,
+    projectsDir,
+    skipExtraction: !apiKey,
+    apiKey,
+    concurrency: 2,
+  });
 }
