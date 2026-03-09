@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-03-09
+
+### Added
+- **Session Intelligence** — `get_stats` now auto-loads last session context (branch, decisions, files) and surfaces relevant decisions for current work based on file matching, branch keywords, and recency
+- **Token Savings Tracking** — Every `query_memory` call is logged with estimated tokens saved. ROI metrics available via `get_stats` and dashboard
+- **Session Review Tool** — New `review_session` MCP tool shows files changed without decisions and suggests what to save before ending a session
+- **Memory ROI Dashboard** — 4-card grid on Analytics page: Total Queries, Hit Rate, Tokens Saved, Time Saved
+- **Git Context Capture** — Sessions automatically record git branch and project path at start and end
+
+### Changed
+- `get_stats` output now includes last session summary, relevant decisions, and token savings ROI
+- `query_memory` now logs queries for ROI tracking
+- Memory instructions template includes session start/end workflow
+- README updated with session intelligence, ROI tracking, and new tool descriptions
+
 ## [0.2.0] - 2026-03-07
 
 ### Added
@@ -66,6 +81,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Templates** — CLAUDE.md and memory-instructions auto-generated on init
 - Initial README with quick start guide
 
+[0.3.0]: https://github.com/yahav10/claude-session-memory/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/yahav10/claude-session-memory/compare/v0.1.3...v0.2.0
 [0.1.3]: https://github.com/yahav10/claude-session-memory/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/yahav10/claude-session-memory/compare/v0.1.1...v0.1.2

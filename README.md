@@ -10,7 +10,7 @@
 [![100% Local](https://img.shields.io/badge/Privacy-100%25_Local-purple)](/)
 [![Zero Telemetry](https://img.shields.io/badge/Telemetry-Zero-orange)](/)
 
-*Save architectural decisions during conversations. Query them forever. 100% local.*
+*Save decisions. Auto-load context. Prove the ROI. 100% local.*
 
 </div>
 
@@ -94,17 +94,17 @@ Every time Claude doesn't know your project context, **you pay for it** — in t
 
 ## 💡 The Solution
 
-An MCP server that gives Claude Code a **queryable SQLite database** of your project's architectural decisions. Decisions are saved during conversations and persist across sessions.
+An MCP server that gives Claude Code a **queryable SQLite database** of your project's architectural decisions — plus **automatic session intelligence** that loads the right context at the right time.
 
 ## ✨ Why Use It
 
 | Benefit | What it means for you |
 |---------|----------------------|
-| 💰 **Save tokens and money** | Claude gets context from memory instead of you burning tokens re-explaining it |
+| 🧠 **Auto session continuity** | Claude knows what you worked on last session — branch, decisions, files changed |
+| 🎯 **Smart context loading** | Relevant decisions are surfaced automatically based on your current branch and files |
+| 💰 **Proven ROI** | Track token savings, time saved, and hit rate — with real numbers |
 | 🔁 **Never re-explain decisions** | Claude remembers what you decided and why, across every session |
-| 🎯 **Right answers on first try** | Full project context means fewer wrong assumptions and less back-and-forth |
-| 📈 **Knowledge that compounds** | Session 1 is normal. Session 50 feels like magic — Claude knows everything |
-| 🚀 **Instant team onboarding** | New team members query past decisions instead of digging through Slack threads |
+| 📋 **Session review** | Get prompted to save decisions before ending a session — nothing slips through |
 | 🔒 **100% local and private** | SQLite on your machine, zero network calls, zero telemetry |
 
 ## ⚡ Quick Start
@@ -114,6 +114,27 @@ npx claude-session-memory init
 ```
 
 Restart Claude Code. **That's it.** 🎉
+
+## 🧠 Session Intelligence
+
+Every session is smarter than the last:
+
+```
+  Session Start (get_stats)              Session End (review_session)
+  ─────────────────────────              ────────────────────────────
+  ✅ Last session context                ✅ Decisions saved this session
+     Branch, decisions, files               What you captured
+  ✅ Relevant decisions                  ✅ Files changed without decisions
+     Matched by branch + files              What you might have missed
+  ✅ Token savings ROI                   ✅ Suggestions
+     Queries, hit rate, time saved          "Consider saving for auth.ts"
+```
+
+**How context matching works:**
+
+1. **File matching** — decisions linked to files you're currently modifying
+2. **Branch keywords** — `feature/auth` → finds decisions tagged `auth`
+3. **Recent fallback** — always shows latest decisions if no specific match
 
 ## 🔄 How It Works
 
@@ -156,10 +177,11 @@ Restart Claude Code. **That's it.** 🎉
 | Tool | Description |
 |------|-------------|
 | `save_decision` | 💾 Save an architectural decision with title, rationale, alternatives. Auto-detects duplicates via Jaccard similarity |
-| `query_memory` | 🔍 Search decisions using natural language |
+| `query_memory` | 🔍 Search decisions using natural language. Logs every query for ROI tracking |
 | `list_recent` | 📋 List recent decisions across sessions |
 | `update_decision` | ♻️ Deprecate or supersede a decision |
-| `get_stats` | 📊 Get memory statistics (auto-called at session start) |
+| `get_stats` | 🧠 Session intelligence — last session context, relevant decisions for current work, token savings ROI |
+| `review_session` | 📋 Review current session before ending — shows files changed without decisions, suggests what to save |
 | `sync_claude_md` | 📝 Export active decisions into your CLAUDE.md with auto-managed markers |
 
 ## 💬 Query Examples
@@ -254,12 +276,27 @@ _Auto-generated from project memory — 5 active decisions_
 
 Any content **outside** the markers is preserved. If no markers exist, they're appended. If no `CLAUDE.md` exists, one is created.
 
+## 📊 Token Savings & ROI
+
+Every `query_memory` call is tracked. The dashboard shows real metrics:
+
+| Metric | What it measures |
+|--------|-----------------|
+| **Total Queries** | How often Claude queries your memory |
+| **Hit Rate** | % of queries that returned useful results |
+| **Tokens Saved** | Estimated tokens saved vs re-explaining (~300/query) |
+| **Time Saved** | Estimated minutes saved (~2 min/query) |
+
+View these in the web dashboard at `/analytics` or via `get_stats` in any session.
+
 ## 🏗️ Architecture
 
 ```
 claude-session-memory
 ├── Storage:      SQLite + FTS5 full-text search, WAL mode
 ├── Transport:    MCP stdio (spawned by Claude Code)
+├── Intelligence: Session continuity, context matching, ROI tracking
+├── Dashboard:    Built-in web UI with analytics and AI coach
 ├── Dependencies: better-sqlite3, @modelcontextprotocol/sdk, commander
 └── Privacy:      100% local — zero network calls, zero telemetry
 ```
@@ -285,8 +322,8 @@ MIT — use it however you like.
 
 **Session 1** — You save your first decision. Nothing special yet.<br>
 **Session 5** — Claude stops asking what database you use. It knows.<br>
-**Session 20** — You say "add caching" and Claude already knows your stack, your patterns, your preferences.<br>
-**Session 50** — A new teammate opens Claude Code and asks "how does auth work?" — full history, instantly.<br>
+**Session 20** — Claude auto-loads your last session's context and relevant decisions before you say a word.<br>
+**Session 50** — Dashboard shows 500+ tokens saved, 100+ minutes reclaimed. A new teammate asks "how does auth work?" — full history, instantly.<br>
 
 **The more you use it, the more valuable it becomes.**
 
