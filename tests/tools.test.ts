@@ -107,19 +107,19 @@ describe('MCP Tool Handlers', () => {
       });
     });
 
-    it('finds decisions by keyword', () => {
-      const result = handleQueryMemory(db, sessionId, { query: 'why did we choose JWT?' });
+    it('finds decisions by keyword', async () => {
+      const result = await handleQueryMemory(db, sessionId, { query: 'why did we choose JWT?' });
       expect(result.results.length).toBeGreaterThan(0);
       expect(result.results[0].title).toContain('JWT');
     });
 
-    it('returns empty results for no match', () => {
-      const result = handleQueryMemory(db, sessionId, { query: 'quantum computing' });
+    it('returns empty results for no match', async () => {
+      const result = await handleQueryMemory(db, sessionId, { query: 'quantum computing' });
       expect(result.results).toEqual([]);
     });
 
-    it('respects limit parameter', () => {
-      const result = handleQueryMemory(db, sessionId, { query: 'show recent decisions', limit: 1 });
+    it('respects limit parameter', async () => {
+      const result = await handleQueryMemory(db, sessionId, { query: 'show recent decisions', limit: 1 });
       expect(result.results.length).toBe(1);
     });
   });

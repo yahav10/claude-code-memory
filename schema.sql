@@ -26,7 +26,8 @@ CREATE TABLE IF NOT EXISTS decisions (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   created_by TEXT,
   session_id TEXT REFERENCES sessions(id),
-  tags TEXT
+  tags TEXT,
+  embedding BLOB
 );
 
 CREATE TABLE IF NOT EXISTS decision_files (

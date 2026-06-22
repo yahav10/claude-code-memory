@@ -101,6 +101,8 @@ An MCP server that gives Claude Code a **queryable SQLite database** of your pro
 | Benefit | What it means for you |
 |---------|----------------------|
 | 🧠 **Auto session continuity** | Claude knows what you worked on last session — branch, decisions, files changed |
+| ✍️ **Automatic capture** | A `SessionEnd` hook saves decisions from every session — no need to remember to ask |
+| 🔎 **Semantic search** | Paraphrased questions still find the right decision, even with zero shared keywords |
 | 🎯 **Smart context loading** | Relevant decisions are surfaced automatically based on your current branch and files |
 | 💰 **Proven ROI** | Track token savings, time saved, and hit rate — with real numbers |
 | 🔁 **Never re-explain decisions** | Claude remembers what you decided and why, across every session |
@@ -135,6 +137,33 @@ Every session is smarter than the last:
 1. **File matching** — decisions linked to files you're currently modifying
 2. **Branch keywords** — `feature/auth` → finds decisions tagged `auth`
 3. **Recent fallback** — always shows latest decisions if no specific match
+
+## ✍️ Automatic Capture
+
+`init` installs a `SessionEnd` hook so memory fills itself. When a session ends, decisions are extracted (via Haiku) and saved automatically — you don't have to remember to ask Claude to save them.
+
+```
+  Session ends ──▶ SessionEnd hook ──▶ extract decisions ──▶ save to memory
+```
+
+- **Idempotent** — sessions already captured are skipped, so nothing is double-saved.
+- **No key? No problem** — without an Anthropic API key it stores session metadata only (no extraction), and you can still save decisions explicitly via `save_decision`.
+- The 5-minute auto-import in the web dashboard still works too; the hook just makes capture immediate.
+
+## 🔎 Semantic Search
+
+`query_memory` blends keyword search with **vector similarity**, so questions match by *meaning*, not just shared words:
+
+```
+"How do users prove their identity to the API?"
+        │
+        ▼
+✅ finds "Adopt stateless token authentication"  (zero keywords in common)
+```
+
+- Runs **100% locally** via a small sentence-embedding model (`multi-qa-MiniLM-L6-cos-v1`, 384-dim) — the model weights (~25MB) download once on first use, then everything stays on your machine.
+- Keyword/FTS matches come first (they capture explicit intent like file paths and tags); semantic matches fill any remaining slots.
+- Powered by the optional `@xenova/transformers` dependency. If it's not installed, search gracefully falls back to keyword-only. Run `reindex` to embed decisions saved before you enabled it.
 
 ## 🔄 How It Works
 
@@ -204,6 +233,7 @@ Every session is smarter than the last:
 | `npx claude-session-memory export` | 📤 Export decisions (JSON/Markdown/CSV) |
 | `npx claude-session-memory import <file>` | 📥 Import decisions from JSON |
 | `npx claude-session-memory sync-claudemd` | 📝 Sync active decisions into CLAUDE.md |
+| `npx claude-session-memory reindex` | 🔎 Build semantic-search embeddings for existing decisions |
 | `npx claude-session-memory stats` | 📊 Show memory statistics |
 
 ### Workspace Setup

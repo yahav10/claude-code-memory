@@ -51,6 +51,9 @@ function migrateDecisionsTable(db: Database.Database): void {
   if (!existing.has('confidence')) {
     db.exec('ALTER TABLE decisions ADD COLUMN confidence REAL DEFAULT 1.0');
   }
+  if (!existing.has('embedding')) {
+    db.exec('ALTER TABLE decisions ADD COLUMN embedding BLOB');
+  }
 }
 
 function migrateQueryLogTable(db: Database.Database): void {
@@ -69,7 +72,11 @@ function migrateQueryLogTable(db: Database.Database): void {
 }
 
 export function findProjectRoot(): string {
-  let dir = process.cwd();
+  return findProjectRootFrom(process.cwd());
+}
+
+export function findProjectRootFrom(startDir: string): string {
+  let dir = startDir;
 
   while (dir !== path.parse(dir).root) {
     if (
@@ -82,7 +89,7 @@ export function findProjectRoot(): string {
     dir = path.dirname(dir);
   }
 
-  return process.cwd();
+  return startDir;
 }
 
 export function getDbPath(): string {

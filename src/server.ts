@@ -98,7 +98,7 @@ server.tool(
   },
   async (args) => {
     try {
-      const { results, query } = handleQueryMemory(db, currentSessionId, args);
+      const { results, query } = await handleQueryMemory(db, currentSessionId, args);
 
       if (results.length === 0) {
         return {

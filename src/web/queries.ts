@@ -238,6 +238,7 @@ export function getDecisionDetail(db: Database.Database, id: number): DecisionDe
   } | undefined;
 
   if (!row) return null;
+  delete (row as any).embedding; // binary blob — never return it over the API
 
   const files = db.prepare(
     'SELECT file_path FROM decision_files WHERE decision_id = ?'

@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-06-22
+
+### Added
+- **Automatic Session Capture** — `init` now installs a `SessionEnd` hook that captures each finished session into memory automatically (via the new `capture` command). Decisions are extracted with Haiku and saved without relying on the agent to call `save_decision`. Idempotent — sessions already stored are skipped. Falls back to metadata-only when no API key is configured.
+- **Semantic Search** — `query_memory` now blends keyword/FTS results with vector similarity, so paraphrased questions match (e.g. "how do users prove their identity?" finds "stateless token authentication"). Runs locally via a small sentence-embedding model (`multi-qa-MiniLM-L6-cos-v1`, 384-dim); the optional `@xenova/transformers` dependency loads lazily and degrades gracefully to keyword search if absent.
+- **`reindex` CLI command** — Backfills embeddings for existing decisions.
+
+### Changed
+- `decisions` table gains an `embedding` column (auto-migrated; excluded from exports and API responses)
+- `query_memory` is now async and returns semantic matches with a `semantic_score` when keyword results don't fill the limit
+
 ## [0.3.0] - 2026-03-09
 
 ### Added

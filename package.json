@@ -1,6 +1,6 @@
 {
   "name": "claude-session-memory",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "Persistent project memory for Claude Code — track architectural decisions and query them conversationally",
   "type": "module",
   "main": "./dist/index.js",
@@ -43,6 +43,9 @@
     "commander": "^14.0.0",
     "fastify": "^5.8.1",
     "zod": "^3.24.0"
+  },
+  "optionalDependencies": {
+    "@xenova/transformers": "^2.17.2"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.0",

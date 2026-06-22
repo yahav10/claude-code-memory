@@ -18,6 +18,36 @@ interface InitOptions {
   force: boolean;
 }
 
+const CAPTURE_COMMAND = 'npx claude-session-memory capture';
+
+/**
+ * Install a SessionEnd hook that auto-captures the just-ended session into memory.
+ * Merges into existing settings without clobbering other hooks. Idempotent.
+ */
+function ensureSessionEndHook(settingsPath: string): void {
+  const settings: any = {};
+  if (fs.existsSync(settingsPath)) {
+    try {
+      Object.assign(settings, JSON.parse(fs.readFileSync(settingsPath, 'utf-8')));
+    } catch { /* start fresh */ }
+  }
+
+  if (!settings.hooks) settings.hooks = {};
+  if (!Array.isArray(settings.hooks.SessionEnd)) settings.hooks.SessionEnd = [];
+
+  const already = settings.hooks.SessionEnd.some((group: any) =>
+    Array.isArray(group?.hooks) && group.hooks.some((h: any) => h?.command === CAPTURE_COMMAND),
+  );
+  if (already) return;
+
+  settings.hooks.SessionEnd.push({
+    hooks: [{ type: 'command', command: CAPTURE_COMMAND }],
+  });
+
+  fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
+  fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n');
+}
+
 export function runInit(projectRoot: string, options: InitOptions): void {
   const claudeDir = path.join(projectRoot, '.claude');
   const dbPath = path.join(claudeDir, 'project-memory.db');
@@ -73,6 +103,14 @@ export function runInit(projectRoot: string, options: InitOptions): void {
     fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n');
   }
 
+  // 4b. Install SessionEnd hook for automatic decision capture.
+  // Project scope → committed project settings; global scope → user settings (one hook,
+  // routed to the right project DB via the hook payload's cwd).
+  const hookSettingsPath = options.scope === 'project'
+    ? path.join(claudeDir, 'settings.json')
+    : path.join(process.env.HOME || '~', '.claude', 'settings.json');
+  ensureSessionEndHook(hookSettingsPath);
+
   // 5. Create memory-instructions.md
   const templatePath = path.join(__dirname, '..', 'templates', 'memory-instructions.md');
   const instructionsPath = path.join(claudeDir, 'memory-instructions.md');
@@ -110,6 +148,8 @@ export function runExport(projectRoot: string, format: string, outputPath?: stri
     GROUP BY d.id
     ORDER BY d.created_at
   `).all() as any[];
+
+  for (const d of decisions) delete d.embedding; // binary blob, not useful in exports
 
   const sessions = db.prepare('SELECT * FROM sessions ORDER BY started_at').all();
 
@@ -451,6 +491,94 @@ program
 
       console.log(`CLAUDE.md updated with ${result.decisionsCount} active decision(s)`);
       console.log(`  Path: ${path.join(root, 'CLAUDE.md')}`);
+    } catch (error) {
+      console.error(`Error: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('capture')
+  .description('Capture the just-ended session into memory (called by the SessionEnd hook)')
+  .option('--transcript <path>', 'Transcript path (defaults to the hook payload on stdin)')
+  .option('--skip-extraction', 'Store session metadata only, skip AI decision extraction')
+  .action(async (opts) => {
+    // Never break Claude Code: any failure here exits 0 silently.
+    try {
+      let transcriptPath: string | undefined = opts.transcript;
+      let cwd = process.cwd();
+
+      // Claude Code pipes hook JSON ({ transcript_path, cwd, ... }) on stdin.
+      if (!process.stdin.isTTY) {
+        const chunks: Buffer[] = [];
+        for await (const chunk of process.stdin) chunks.push(chunk as Buffer);
+        const raw = Buffer.concat(chunks).toString('utf-8').trim();
+        if (raw) {
+          try {
+            const payload = JSON.parse(raw);
+            transcriptPath = transcriptPath || payload.transcript_path;
+            if (payload.cwd) cwd = payload.cwd;
+          } catch { /* not JSON; rely on --transcript */ }
+        }
+      }
+
+      if (!transcriptPath || !fs.existsSync(transcriptPath)) return;
+
+      const { findProjectRootFrom } = await import('./database.js');
+      const root = process.env.PROJECT_ROOT || findProjectRootFrom(cwd);
+      const dbPath = path.join(root, '.claude', 'project-memory.db');
+      if (!fs.existsSync(dbPath)) return; // project not initialized
+
+      const db = initDatabase(dbPath);
+
+      const row = db.prepare("SELECT value FROM settings WHERE key = 'anthropic_api_key'").get() as { value?: string } | undefined;
+      const apiKey = row?.value || process.env.ANTHROPIC_API_KEY;
+
+      const { captureSession } = await import('./import/capture.js');
+      const result = await captureSession({
+        db,
+        transcriptPath,
+        apiKey,
+        skipExtraction: opts.skipExtraction || !apiKey,
+      });
+      db.close();
+
+      if (result.status === 'captured') {
+        console.error(`[project-memory] Captured session ${result.sessionId?.slice(0, 8)} (${result.decisionsExtracted} decisions)`);
+      }
+    } catch (error) {
+      console.error(`[project-memory] capture skipped: ${(error as Error).message}`);
+    }
+  });
+
+program
+  .command('reindex')
+  .description('Build semantic-search embeddings for decisions that lack them')
+  .action(async () => {
+    try {
+      const root = findProjectRoot();
+      const dbPath = path.join(root, '.claude', 'project-memory.db');
+      if (!fs.existsSync(dbPath)) {
+        throw new Error('No project memory database found. Run "claude-session-memory init" first.');
+      }
+      const db = initDatabase(dbPath);
+      const { ensureEmbeddings, embeddingsAvailable } = await import('./utils/embeddings.js');
+
+      if (!(await embeddingsAvailable())) {
+        console.error('Semantic search unavailable: install the optional dependency with "npm i @xenova/transformers".');
+        db.close();
+        process.exit(1);
+      }
+
+      let total = 0;
+      process.stdout.write('  Embedding decisions...');
+      // ensureEmbeddings is batched; loop until the backlog is drained.
+      for (let n = await ensureEmbeddings(db); n > 0; n = await ensureEmbeddings(db)) {
+        total += n;
+        process.stdout.write(`\r  Embedding decisions... ${total}`);
+      }
+      db.close();
+      console.log(`\n  Done. Embedded ${total} decision(s).`);
     } catch (error) {
       console.error(`Error: ${(error as Error).message}`);
       process.exit(1);
