@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import * as readline from 'node:readline';
+import { execFileSync, spawn } from 'node:child_process';
 import { fileURLToPath } from 'url';
 import { initDatabase, findProjectRoot } from './database.js';
 import { handleGetStats } from './tools/get-stats.js';
@@ -16,15 +17,35 @@ const __dirname = path.dirname(__filename);
 interface InitOptions {
   scope: 'project' | 'global';
   force: boolean;
+  registerUserMcp?: UserMcpRegistrar;
 }
 
-const CAPTURE_COMMAND = 'npx claude-session-memory capture';
+function homeDir(): string {
+  return process.env.HOME || os.homedir();
+}
+
+function packageVersion(): string {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf-8')).version;
+  } catch {
+    return 'unknown';
+  }
+}
+
+export const CAPTURE_COMMAND = 'npx -y claude-session-memory capture';
+// Claude Code gives all SessionEnd hooks a shared 1.5s budget by default and cancels anything
+// slower. `capture` itself only reads the payload and hands off to a detached worker, but the
+// npx launch alone can exceed 1.5s, so the hook raises its own timeout (max honored is 60s).
+export const CAPTURE_HOOK_TIMEOUT_SEC = 30;
+// Matches every capture hook this tool has ever installed (pre-0.4.1 had no timeout).
+const CAPTURE_HOOK_PATTERN = /claude-session-memory\s+capture/;
 
 /**
  * Install a SessionEnd hook that auto-captures the just-ended session into memory.
- * Merges into existing settings without clobbering other hooks. Idempotent.
+ * Merges into existing settings without clobbering other hooks. Idempotent, and upgrades
+ * capture hooks written by older versions in place.
  */
-function ensureSessionEndHook(settingsPath: string): void {
+export function ensureSessionEndHook(settingsPath: string): void {
   const settings: any = {};
   if (fs.existsSync(settingsPath)) {
     try {
@@ -35,16 +56,50 @@ function ensureSessionEndHook(settingsPath: string): void {
   if (!settings.hooks) settings.hooks = {};
   if (!Array.isArray(settings.hooks.SessionEnd)) settings.hooks.SessionEnd = [];
 
-  const already = settings.hooks.SessionEnd.some((group: any) =>
-    Array.isArray(group?.hooks) && group.hooks.some((h: any) => h?.command === CAPTURE_COMMAND),
-  );
-  if (already) return;
+  const isOurs = (h: any) => typeof h?.command === 'string' && CAPTURE_HOOK_PATTERN.test(h.command);
+  settings.hooks.SessionEnd = settings.hooks.SessionEnd.flatMap((group: any) => {
+    if (!Array.isArray(group?.hooks) || !group.hooks.some(isOurs)) return [group];
+    const rest = group.hooks.filter((h: any) => !isOurs(h));
+    return rest.length > 0 ? [{ ...group, hooks: rest }] : [];
+  });
 
   settings.hooks.SessionEnd.push({
-    hooks: [{ type: 'command', command: CAPTURE_COMMAND }],
+    hooks: [{ type: 'command', command: CAPTURE_COMMAND, timeout: CAPTURE_HOOK_TIMEOUT_SEC }],
   });
 
   fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
+  fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n');
+}
+
+/** Registers a user-scope MCP server. Injectable so tests don't touch the real Claude config. */
+export type UserMcpRegistrar = (name: string, config: Record<string, unknown>) => void;
+
+/**
+ * User-scope MCP servers live in ~/.claude.json, which Claude Code rewrites constantly, so go
+ * through its own CLI rather than editing that file. (`mcpServers` in ~/.claude/settings.json,
+ * which older versions of this tool wrote, is ignored by Claude Code.)
+ */
+export const registerUserMcpViaClaudeCli: UserMcpRegistrar = (name, config) => {
+  try {
+    execFileSync('claude', ['mcp', 'remove', '--scope', 'user', name], { stdio: 'ignore' });
+  } catch { /* not registered yet */ }
+  execFileSync('claude', ['mcp', 'add-json', '--scope', 'user', name, JSON.stringify(config)], {
+    stdio: 'pipe',
+  });
+};
+
+/** Remove the dead `mcpServers` entry that pre-0.4.1 global init wrote into settings.json. */
+function removeLegacySettingsMcpEntry(settingsPath: string, name: string): void {
+  if (!fs.existsSync(settingsPath)) return;
+  let settings: any;
+  try {
+    settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+  } catch {
+    return; // never rewrite a settings file we can't parse
+  }
+  if (!settings?.mcpServers || !(name in settings.mcpServers)) return;
+  delete settings.mcpServers[name];
+  if (Object.keys(settings.mcpServers).length === 0) delete settings.mcpServers;
   fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n');
 }
 
@@ -85,22 +140,23 @@ export function runInit(projectRoot: string, options: InitOptions): void {
     };
     fs.writeFileSync(mcpJsonPath, JSON.stringify(mcpConfig, null, 2) + '\n');
   } else {
-    const globalSettingsDir = path.join(process.env.HOME || '~', '.claude');
-    fs.mkdirSync(globalSettingsDir, { recursive: true });
-    const settingsPath = path.join(globalSettingsDir, 'settings.json');
-    const settings: any = {};
-    if (fs.existsSync(settingsPath)) {
-      try {
-        Object.assign(settings, JSON.parse(fs.readFileSync(settingsPath, 'utf-8')));
-      } catch { /* start fresh */ }
-    }
-    if (!settings.mcpServers) settings.mcpServers = {};
-    settings.mcpServers[`project-memory-${path.basename(projectRoot)}`] = {
+    const name = `project-memory-${path.basename(projectRoot)}`;
+    const config = {
+      type: 'stdio',
       command: 'npx',
       args: ['claude-session-memory', 'serve'],
       env: { PROJECT_ROOT: projectRoot },
     };
-    fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n');
+    const register = options.registerUserMcp ?? registerUserMcpViaClaudeCli;
+    try {
+      register(name, config);
+    } catch (error) {
+      throw new Error(
+        `Could not register the MCP server with Claude Code (${(error as Error).message}). ` +
+        `Register it manually:\n  claude mcp add-json --scope user ${name} '${JSON.stringify(config)}'`,
+      );
+    }
+    removeLegacySettingsMcpEntry(path.join(homeDir(), '.claude', 'settings.json'), name);
   }
 
   // 4b. Install SessionEnd hook for automatic decision capture.
@@ -108,7 +164,7 @@ export function runInit(projectRoot: string, options: InitOptions): void {
   // routed to the right project DB via the hook payload's cwd).
   const hookSettingsPath = options.scope === 'project'
     ? path.join(claudeDir, 'settings.json')
-    : path.join(process.env.HOME || '~', '.claude', 'settings.json');
+    : path.join(homeDir(), '.claude', 'settings.json');
   ensureSessionEndHook(hookSettingsPath);
 
   // 5. Create memory-instructions.md
@@ -319,7 +375,7 @@ const program = new Command();
 program
   .name('claude-session-memory')
   .description('Persistent project memory for Claude Code')
-  .version('0.1.0');
+  .version(packageVersion());
 
 program
   .command('init')
@@ -342,7 +398,7 @@ program
       runInit(projectRoot, { scope, force: opts.force });
       console.log('\nProject memory initialized successfully!');
       console.log(`  Database: ${path.join(projectRoot, '.claude', 'project-memory.db')}`);
-      console.log(`  MCP config: ${scope === 'project' ? '.mcp.json' : '~/.claude/settings.json'}`);
+      console.log(`  MCP config: ${scope === 'project' ? '.mcp.json' : 'user scope (claude mcp list)'}`);
       console.log('\n  Restart Claude Code to activate the memory system.');
     } catch (error) {
       console.error(`Error: ${(error as Error).message}`);
@@ -502,27 +558,38 @@ program
   .description('Capture the just-ended session into memory (called by the SessionEnd hook)')
   .option('--transcript <path>', 'Transcript path (defaults to the hook payload on stdin)')
   .option('--skip-extraction', 'Store session metadata only, skip AI decision extraction')
+  .option('--cwd <dir>', 'Directory used to locate the project (defaults to the hook payload cwd)')
+  .option('--foreground', 'Run the capture in this process instead of a detached worker')
   .action(async (opts) => {
     // Never break Claude Code: any failure here exits 0 silently.
     try {
       let transcriptPath: string | undefined = opts.transcript;
-      let cwd = process.cwd();
+      let cwd: string = opts.cwd || process.cwd();
 
       // Claude Code pipes hook JSON ({ transcript_path, cwd, ... }) on stdin.
-      if (!process.stdin.isTTY) {
+      if (!opts.transcript && !process.stdin.isTTY) {
         const chunks: Buffer[] = [];
         for await (const chunk of process.stdin) chunks.push(chunk as Buffer);
         const raw = Buffer.concat(chunks).toString('utf-8').trim();
         if (raw) {
           try {
             const payload = JSON.parse(raw);
-            transcriptPath = transcriptPath || payload.transcript_path;
-            if (payload.cwd) cwd = payload.cwd;
-          } catch { /* not JSON; rely on --transcript */ }
+            transcriptPath = payload.transcript_path;
+            if (payload.cwd && !opts.cwd) cwd = payload.cwd;
+          } catch { /* not JSON; nothing to capture */ }
         }
       }
 
       if (!transcriptPath || !fs.existsSync(transcriptPath)) return;
+
+      // The SessionEnd hook is cancelled once its time budget runs out, which a Haiku call
+      // easily exceeds. Hand the real work to a detached worker and return immediately.
+      if (!opts.foreground) {
+        const args = [__filename, 'capture', '--foreground', '--transcript', transcriptPath, '--cwd', cwd];
+        if (opts.skipExtraction) args.push('--skip-extraction');
+        spawn(process.execPath, args, { detached: true, stdio: 'ignore' }).unref();
+        return;
+      }
 
       const { findProjectRootFrom } = await import('./database.js');
       const root = process.env.PROJECT_ROOT || findProjectRootFrom(cwd);

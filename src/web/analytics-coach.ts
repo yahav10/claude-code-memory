@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { getModel } from '../utils/model.js';
 import type { DecisionQualityMetrics, WorkPatternMetrics, CodebaseMetrics, StructuredInsight } from './queries.js';
 
 export interface CoachInput {
@@ -71,7 +72,7 @@ CODEBASE:
   try {
     const client = getClient(apiKey);
     const response = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
+      model: getModel(),
       max_tokens: 1024,
       messages: [{ role: 'user', content: `${COACH_PROMPT}\n\n${metricsText}` }],
     });

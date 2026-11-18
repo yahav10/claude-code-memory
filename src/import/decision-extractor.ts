@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { getModel } from '../utils/model.js';
 
 export interface ExtractedDecision {
   title: string;
@@ -59,7 +60,7 @@ export async function extractDecisions(
   const client = getClient(apiKey);
 
   const response = await client.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: getModel(),
     max_tokens: 4096,
     messages: [{
       role: 'user',

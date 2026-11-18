@@ -79,8 +79,8 @@ export async function parseSessionFile(filePath: string): Promise<SessionMetadat
       if (!gitBranch && record.gitBranch) gitBranch = record.gitBranch;
       if (!cliVersion && record.version) cliVersion = record.version;
 
-      // Extract best user prompt (skip system-generated messages)
-      if (record.message?.content) {
+      // Extract best user prompt (skip system-generated and Claude Code-injected isMeta messages)
+      if (record.message?.content && !record.isMeta) {
         let rawText = '';
         const content = record.message.content;
         if (typeof content === 'string') {

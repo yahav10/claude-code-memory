@@ -14,23 +14,20 @@ import { syncClaudeMd } from './utils/claudemd-sync.js';
 import { findProjectRoot } from './database.js';
 import { detectCurrentWork } from './utils/session-intelligence.js';
 import { handleReviewSession } from './tools/review-session.js';
+import { createLazySession } from './utils/lazy-session.js';
+import { readFileSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const dbPath = getDbPath();
 const db = initDatabase(dbPath);
 const currentSessionId = generateSessionId();
 
-// Register session
-db.prepare('INSERT INTO sessions (id) VALUES (?)').run(currentSessionId);
-
-// Capture git context at session start
-try {
+// The session row (with git context) is created on first tool use, not on server start.
+const session = createLazySession(db, currentSessionId, () => {
   const projectRoot = process.env.PROJECT_ROOT || findProjectRoot();
-  const currentWork = detectCurrentWork(projectRoot);
-  if (currentWork.branch || projectRoot) {
-    db.prepare('UPDATE sessions SET git_branch = ?, project_path = ? WHERE id = ?')
-      .run(currentWork.branch, projectRoot, currentSessionId);
-  }
-} catch { /* non-critical */ }
+  return { branch: detectCurrentWork(projectRoot).branch, projectPath: projectRoot };
+});
 
 // Run confidence decay on startup
 const decayResult = decayConfidence(db);
@@ -43,7 +40,9 @@ console.error(`[project-memory] Database: ${dbPath}`);
 
 const server = new McpServer({
   name: 'project-memory',
-  version: '0.1.0',
+  version: JSON.parse(
+    readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'package.json'), 'utf-8'),
+  ).version,
 });
 
 // --- save_decision ---
@@ -63,6 +62,7 @@ server.tool(
   },
   async (args) => {
     try {
+      session.ensure();
       const result = handleSaveDecision(db, currentSessionId, args);
       let text = `Decision saved (ID: ${result.id})\n\nTitle: ${result.title}\nDecision: ${args.decision}\nRationale: ${args.rationale}`;
 
@@ -98,6 +98,7 @@ server.tool(
   },
   async (args) => {
     try {
+      session.ensure();
       const { results, query } = await handleQueryMemory(db, currentSessionId, args);
 
       if (results.length === 0) {
@@ -141,6 +142,7 @@ server.tool(
   },
   async (args) => {
     try {
+      session.ensure();
       const { results } = handleListRecent(db, currentSessionId, args);
 
       if (results.length === 0) {
@@ -174,6 +176,7 @@ server.tool(
   },
   async (args) => {
     try {
+      session.ensure();
       const result = handleUpdateDecision(db, args);
       return {
         content: [{
@@ -196,6 +199,7 @@ server.tool(
   {},
   async () => {
     try {
+      session.ensure();
       const stats = handleGetStats(db);
       let text = `Project Memory Statistics\n`;
       text += `${'─'.repeat(40)}\n`;
@@ -265,6 +269,7 @@ server.tool(
   async () => {
     try {
       const projectRoot = process.env.PROJECT_ROOT || findProjectRoot();
+      session.ensure();
       const result = syncClaudeMd(projectRoot, db);
       return {
         content: [{
@@ -288,6 +293,7 @@ server.tool(
   async () => {
     try {
       const projectRoot = process.env.PROJECT_ROOT || findProjectRoot();
+      session.ensure();
       const result = handleReviewSession(db, currentSessionId, projectRoot);
 
       let text = `Session Review\n${'─'.repeat(40)}\n`;
@@ -321,6 +327,11 @@ server.tool(
 
 // --- Graceful shutdown ---
 process.on('SIGINT', () => {
+  if (!session.started) {
+    db.close(); // memory was never used this session: leave no trace
+    process.exit(0);
+  }
+
   // Capture git branch at session end
   try {
     const projectRoot = process.env.PROJECT_ROOT || findProjectRoot();

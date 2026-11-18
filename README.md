@@ -147,8 +147,11 @@ Every session is smarter than the last:
 ```
 
 - **Idempotent** — sessions already captured are skipped, so nothing is double-saved.
+- **Never slows Claude Code down** — the hook hands the session to a background worker and returns immediately, so extraction isn't cut off by Claude Code's SessionEnd time limit.
 - **No key? No problem** — without an Anthropic API key it stores session metadata only (no extraction), and you can still save decisions explicitly via `save_decision`.
+- **Pick the model** — extraction uses Claude Haiku by default; set `CLAUDE_SESSION_MEMORY_MODEL` to override.
 - The 5-minute auto-import in the web dashboard still works too; the hook just makes capture immediate.
+- **Upgrading from ≤0.4.0?** Re-run `npx claude-session-memory init --force` once to install the fixed hook (and, for `--scope global`, to register the server where Claude Code actually reads it).
 
 ## 🔎 Semantic Search
 

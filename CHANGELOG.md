@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2026-11-16
+
+### Fixed
+- **Automatic capture never completed** — Claude Code gives all `SessionEnd` hooks a shared 1.5s budget and cancels slower ones ("Hook cancelled"); `capture` ran the Haiku extraction inline and was killed. The hook now hands the session to a detached background worker and returns immediately, and is installed with `timeout: 30` so the `npx` launch itself isn't cut off. Re-running `init` upgrades hooks written by older versions in place.
+- **`init --scope global` registered nothing** — it wrote `mcpServers` into `~/.claude/settings.json`, which Claude Code does not read. It now registers a user-scope server via `claude mcp add-json --scope user` (printing the exact command if `claude` isn't on PATH) and removes the dead `settings.json` entry.
+- **Thousands of empty sessions** — the MCP server created a session row on every launch, even when memory was never used. The row is now created on first tool use.
+- **Extraction fed injected content to the model** — `isMeta` transcript records (skill bodies, subagent reports, command caveats) were treated as user messages, could fill the ~8K-char extraction budget, and could become the session's "first prompt". They are now skipped.
+
+### Changed
+- Extraction and analytics-coach model is configurable via `CLAUDE_SESSION_MEMORY_MODEL`; default moved from the pinned `claude-haiku-4-5-20251001` to `claude-haiku-5-5`.
+- CLI `--version` and MCP server version now report the package version instead of `0.1.0`.
+
 ## [0.4.0] - 2026-06-22
 
 ### Added

@@ -24,7 +24,9 @@ export async function buildTranscript(filePath: string, maxChars: number = DEFAU
       continue;
     }
 
-    if (record.type === 'user') {
+    // isMeta user records are content Claude Code injected (skill bodies, subagent reports,
+    // command caveats), not what the user typed; they can fill the whole extraction budget.
+    if (record.type === 'user' && !record.isMeta) {
       const text = extractText(record.message?.content);
       if (text) {
         const entry = `USER: ${text}\n`;
