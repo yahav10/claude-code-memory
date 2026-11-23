@@ -181,6 +181,14 @@ describe('push hooks', () => {
     expect(commands).toEqual(['other-tool start', 'npx -y claude-session-memory hook SessionStart']);
   });
 
+  it('refuses to touch a settings file it cannot parse instead of overwriting the user\'s other settings', () => {
+    const broken = '{ "permissions": { "allow": ["Bash(npm test)"], } }';
+    fs.writeFileSync(settingsPath, broken);
+    expect(() => installPushHooks(settingsPath, { promptRecall: false })).toThrow(/settings\.json|could not parse/i);
+    expect(() => ensureSessionEndHook(settingsPath)).toThrow();
+    expect(fs.readFileSync(settingsPath, 'utf-8')).toBe(broken);
+  });
+
   it('init installs push hooks and records the prompt-recall setting', () => {
     const projectRoot = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'ccm-initpush-')));
     fs.mkdirSync(path.join(projectRoot, '.git'));

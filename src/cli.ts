@@ -59,9 +59,15 @@ export interface HookSpec {
 export function ensureHook(settingsPath: string, spec: HookSpec): void {
   const settings: any = {};
   if (fs.existsSync(settingsPath)) {
-    try {
-      Object.assign(settings, JSON.parse(fs.readFileSync(settingsPath, 'utf-8')));
-    } catch { /* start fresh */ }
+    const raw = fs.readFileSync(settingsPath, 'utf-8');
+    if (raw.trim() !== '') {
+      try {
+        Object.assign(settings, JSON.parse(raw));
+      } catch (error) {
+        // Rewriting from scratch would silently drop the user's permissions and other settings.
+        throw new Error(`Could not parse ${settingsPath} (${(error as Error).message}). Fix the JSON and run init again. That file was left unchanged.`);
+      }
+    }
   }
 
   if (!settings.hooks) settings.hooks = {};
