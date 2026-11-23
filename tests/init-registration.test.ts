@@ -4,7 +4,9 @@ import * as path from 'path';
 import * as os from 'os';
 import {
   runInit,
+  ensureHook,
   ensureSessionEndHook,
+  installPushHooks,
   CAPTURE_COMMAND,
   CAPTURE_HOOK_TIMEOUT_SEC,
 } from '../src/cli.js';
@@ -124,5 +126,81 @@ describe('init --scope global', () => {
       force: false,
       registerUserMcp: () => { throw new Error('spawn claude ENOENT'); },
     })).toThrow(/claude mcp add-json --scope user project-memory-/);
+  });
+});
+
+describe('push hooks', () => {
+  let tmpDir: string;
+  let settingsPath: string;
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ccm-push-'));
+    settingsPath = path.join(tmpDir, 'settings.json');
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  const events = () => Object.keys(readJson(settingsPath).hooks).sort();
+
+  it('installs session start, edit, and compaction hooks but not per-prompt recall by default', () => {
+    installPushHooks(settingsPath, { promptRecall: false });
+    expect(events()).toEqual(['PostCompact', 'PreCompact', 'PreToolUse', 'SessionStart']);
+    const pre = readJson(settingsPath).hooks.PreToolUse[0];
+    expect(pre.matcher).toBe('Edit|Write|MultiEdit|NotebookEdit');
+    expect(pre.hooks[0].command).toBe('npx -y claude-session-memory hook PreToolUse');
+  });
+
+  it('adds the per-prompt hook only when asked', () => {
+    installPushHooks(settingsPath, { promptRecall: true });
+    expect(events()).toContain('UserPromptSubmit');
+  });
+
+  it('is idempotent and keeps other tools\' hooks', () => {
+    fs.writeFileSync(settingsPath, JSON.stringify({
+      hooks: { PreToolUse: [{ matcher: 'Bash', hooks: [{ type: 'command', command: 'my-guard' }] }] },
+    }));
+    installPushHooks(settingsPath, { promptRecall: false });
+    installPushHooks(settingsPath, { promptRecall: false });
+    const pre = readJson(settingsPath).hooks.PreToolUse;
+    expect(pre).toHaveLength(2);
+    expect(pre[0].hooks[0].command).toBe('my-guard');
+    expect(readJson(settingsPath).hooks.SessionStart).toHaveLength(1);
+  });
+
+  it('replaces only its own hook for an event, not a foreign one on the same event', () => {
+    fs.writeFileSync(settingsPath, JSON.stringify({
+      hooks: { SessionStart: [{ hooks: [
+        { type: 'command', command: 'npx claude-session-memory hook SessionStart' },
+        { type: 'command', command: 'other-tool start' },
+      ] }] },
+    }));
+    ensureHook(settingsPath, { event: 'SessionStart', command: 'npx -y claude-session-memory hook SessionStart', timeout: 15 });
+    const commands = readJson(settingsPath).hooks.SessionStart.flatMap((g: any) => g.hooks.map((h: any) => h.command));
+    expect(commands).toEqual(['other-tool start', 'npx -y claude-session-memory hook SessionStart']);
+  });
+
+  it('init installs push hooks and records the prompt-recall setting', () => {
+    const projectRoot = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'ccm-initpush-')));
+    fs.mkdirSync(path.join(projectRoot, '.git'));
+    try {
+      runInit(projectRoot, { scope: 'project', force: false });
+      const settings = readJson(path.join(projectRoot, '.claude', 'settings.json'));
+      expect(Object.keys(settings.hooks).sort()).toEqual(['PostCompact', 'PreCompact', 'PreToolUse', 'SessionEnd', 'SessionStart']);
+    } finally {
+      fs.rmSync(projectRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('init --no-push-hooks installs only the capture hook', () => {
+    const projectRoot = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'ccm-initnopush-')));
+    fs.mkdirSync(path.join(projectRoot, '.git'));
+    try {
+      runInit(projectRoot, { scope: 'project', force: false, pushHooks: false });
+      expect(Object.keys(readJson(path.join(projectRoot, '.claude', 'settings.json')).hooks)).toEqual(['SessionEnd']);
+    } finally {
+      fs.rmSync(projectRoot, { recursive: true, force: true });
+    }
   });
 });

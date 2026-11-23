@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-11-18
+
+### Added
+- **Decisions are pushed into context, not just stored.** `init` installs hooks so Claude sees the right decisions without having to remember to ask. Measured on a real project, the agent previously called `query_memory` twice in five months.
+  - `SessionStart` (startup, resume, clear, compact): decisions for the current branch and uncommitted files, capped at about 750 tokens.
+  - `PreToolUse` on `Edit`/`Write`/`MultiEdit`/`NotebookEdit`: decisions recorded for that exact file, capped at about 375 tokens.
+  - `UserPromptSubmit` (opt-in with `init --prompt-recall`, needs the local embedding model): decisions related to the request.
+  - Each hook shows a decision once per session, and again after compaction or `/clear`. `init --no-push-hooks` skips all of this.
+- **Progressive disclosure.** `query_memory` now returns one compact line per match; the new `get_decisions` tool returns full records for the ids you pick. Pass `detail: "full"` for the old complete output.
+- **Compaction capture.** `PreCompact` asks the summary to keep decisions, and `PostCompact` extracts them from the compaction summary in the background. The final SessionEnd capture still completes the session and skips duplicates.
+- `get_stats` reports how many decisions were injected and the tokens spent.
+- New `claude-session-memory hook <event>` command (used by the hooks; not meant to be run by hand).
+
+### Fixed
+- **MCP server and tests crashed intermittently on Node 24** (`Assertion failed: (env) != nullptr` inside `better-sqlite3`'s garbage collection). Upgraded `better-sqlite3` from 11 to 12.11.1: 0 crashes in 15 runs, where the old version crashed in 4 of 12 on this branch. The test suite, which had four files aborting on exit, now passes cleanly.
+- Capture no longer stores a decision that restates an existing active one (compaction and SessionEnd capture can both see the same decision).
+- Decisions with no alternatives no longer print an empty "Alternatives" line.
+
+### Changed
+- **Requires Node 20 or newer** (was 18), because of the `better-sqlite3` upgrade.
+- Memory instructions and the CLAUDE.md snippet no longer tell the agent to call `get_stats` at session start.
+
 ## [0.4.1] - 2026-11-16
 
 ### Fixed

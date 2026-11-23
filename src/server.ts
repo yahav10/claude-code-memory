@@ -15,6 +15,8 @@ import { findProjectRoot } from './database.js';
 import { detectCurrentWork } from './utils/session-intelligence.js';
 import { handleReviewSession } from './tools/review-session.js';
 import { createLazySession } from './utils/lazy-session.js';
+import { handleGetDecisions, formatFullDecision, formatIndexLine, MAX_IDS } from './tools/get-decisions.js';
+import { getInjectionStats } from './utils/injection.js';
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -89,14 +91,17 @@ server.tool(
 );
 
 // --- query_memory ---
-server.tool(
+// Untyped call: the SDK's tool() generics blow up the type checker on this schema.
+(server as any).tool(
   'query_memory',
   'Search for decisions using natural language',
   {
     query: z.string().describe('Natural language question (e.g., "Why JWT?")'),
     limit: z.number().optional().default(5).describe('Max results to return'),
+    detail: z.enum(['index', 'full']).optional().default('index')
+      .describe('index (default): one line per match, then get_decisions for the ones you need. full: complete records.'),
   },
-  async (args) => {
+  async (args: any) => {
     try {
       session.ensure();
       const { results, query } = await handleQueryMemory(db, currentSessionId, args);
@@ -108,22 +113,38 @@ server.tool(
       }
 
       let text = `Found ${results.length} decision(s) for: "${query}"\n\n`;
-      for (const r of results) {
-        text += `## Decision #${r.id}: ${r.title}\n`;
-        text += `**Decision**: ${r.decision}\n`;
-        text += `**Rationale**: ${r.rationale}\n`;
-        if (r.alternatives) {
-          try {
-            const alts = JSON.parse(r.alternatives);
-            text += `**Alternatives**: ${alts.join(', ')}\n`;
-          } catch { /* skip */ }
-        }
-        if (r.consequences) text += `**Consequences**: ${r.consequences}\n`;
-        if (r.affected_files) text += `**Files**: ${r.affected_files}\n`;
-        text += `**Created**: ${r.created_at}\n\n`;
+      if (args.detail === 'full') {
+        for (const r of results) text += formatFullDecision(r);
+      } else {
+        text += results.map(formatIndexLine).join('\n');
+        text += '\n\nCall get_decisions with the #ids you need for rationale, alternatives and files.';
       }
 
       return { content: [{ type: 'text' as const, text }] };
+    } catch (error) {
+      return {
+        content: [{ type: 'text' as const, text: `Error: ${(error as Error).message}` }],
+      };
+    }
+  },
+);
+
+// --- get_decisions ---
+// Untyped call: the SDK's tool() generics blow up the type checker on this schema.
+(server as any).tool(
+  'get_decisions',
+  'Get the full record (rationale, alternatives, consequences, files) for specific decision ids',
+  {
+    ids: z.array(z.number()).min(1).max(MAX_IDS).describe('Decision ids, e.g. from query_memory or injected context'),
+  },
+  async (args: any) => {
+    try {
+      session.ensure();
+      const records = handleGetDecisions(db, args.ids);
+      if (records.length === 0) {
+        return { content: [{ type: 'text' as const, text: `No decisions found for ids: ${args.ids.join(', ')}` }] };
+      }
+      return { content: [{ type: 'text' as const, text: records.map(formatFullDecision).join('') }] };
     } catch (error) {
       return {
         content: [{ type: 'text' as const, text: `Error: ${(error as Error).message}` }],
@@ -216,6 +237,12 @@ server.tool(
       }
       if (stats.tokenSavings.totalQueries > 0) {
         text += `Memory ROI (30d): ${stats.tokenSavings.totalQueries} queries, ~${stats.tokenSavings.estimatedTokensSaved.toLocaleString()} tokens saved, ~${stats.tokenSavings.estimatedMinutesSaved} min saved\n`;
+      }
+
+      const injected = getInjectionStats(db, 30);
+      if (injected.decisionsInjected > 0) {
+        const events = Object.entries(injected.byEvent).map(([e, n]) => `${e} ${n}`).join(', ');
+        text += `Auto-injected (30d): ${injected.decisionsInjected} decision(s) across ${injected.sessions} session(s), ~${injected.estimatedTokensInjected.toLocaleString()} tokens spent (${events})\n`;
       }
 
       // Last session context

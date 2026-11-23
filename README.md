@@ -122,7 +122,7 @@ Restart Claude Code. **That's it.** 🎉
 Every session is smarter than the last:
 
 ```
-  Session Start (get_stats)              Session End (review_session)
+  Session Start (auto-injected)          Session End (review_session)
   ─────────────────────────              ────────────────────────────
   ✅ Last session context                ✅ Decisions saved this session
      Branch, decisions, files               What you captured
@@ -152,6 +152,22 @@ Every session is smarter than the last:
 - **Pick the model** — extraction uses Claude Haiku by default; set `CLAUDE_SESSION_MEMORY_MODEL` to override.
 - The 5-minute auto-import in the web dashboard still works too; the hook just makes capture immediate.
 - **Upgrading from ≤0.4.0?** Re-run `npx claude-session-memory init --force` once to install the fixed hook (and, for `--scope global`, to register the server where Claude Code actually reads it).
+
+## 📌 Decisions Loaded Automatically
+
+Memory only helps if Claude sees it. `init` installs hooks that **push** the right decisions into context, so nothing depends on the agent remembering to ask:
+
+| When | What Claude gets |
+|------|------------------|
+| Session start, resume and after compaction | Decisions for your branch and uncommitted files, newest first (about 750 tokens max) |
+| Before `Edit` / `Write` on a file | Decisions recorded for that exact file (about 375 tokens max) |
+| Every prompt *(opt-in: `init --prompt-recall`)* | Decisions semantically related to the request. Needs the local embedding model |
+| Before compaction | Asks the summary to keep decisions, and saves the ones it finds |
+
+- **Small and capped** — each block has a hard size limit, and every line carries an `#id`; Claude calls `get_decisions` only for the ones it needs.
+- **Shown once** — a decision appears once per session, and again after compaction or `/clear` when the model has lost it.
+- **Measured** — `get_stats` reports how many decisions were injected and the tokens spent, so you can judge the cost.
+- **Switch off** — `init --no-push-hooks`, or delete the `SessionStart` / `PreToolUse` entries from `.claude/settings.json`.
 
 ## 🔎 Semantic Search
 
@@ -209,7 +225,8 @@ Every session is smarter than the last:
 | Tool | Description |
 |------|-------------|
 | `save_decision` | 💾 Save an architectural decision with title, rationale, alternatives. Auto-detects duplicates via Jaccard similarity |
-| `query_memory` | 🔍 Search decisions using natural language. Logs every query for ROI tracking |
+| `query_memory` | 🔍 Search decisions using natural language. Returns a compact one-line-per-match index by default (`detail: "full"` for complete records). Logs every query for ROI tracking |
+| `get_decisions` | 📖 Full record (rationale, alternatives, consequences, files) for specific decision ids, e.g. from a search or injected context |
 | `list_recent` | 📋 List recent decisions across sessions |
 | `update_decision` | ♻️ Deprecate or supersede a decision |
 | `get_stats` | 🧠 Session intelligence — last session context, relevant decisions for current work, token savings ROI |

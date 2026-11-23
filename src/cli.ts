@@ -18,6 +18,10 @@ interface InitOptions {
   scope: 'project' | 'global';
   force: boolean;
   registerUserMcp?: UserMcpRegistrar;
+  /** Install the hooks that push decisions into context (default true). */
+  pushHooks?: boolean;
+  /** Also recall decisions on every prompt (default false; needs the local embedding model). */
+  promptRecall?: boolean;
 }
 
 function homeDir(): string {
@@ -40,12 +44,19 @@ export const CAPTURE_HOOK_TIMEOUT_SEC = 30;
 // Matches every capture hook this tool has ever installed (pre-0.4.1 had no timeout).
 const CAPTURE_HOOK_PATTERN = /claude-session-memory\s+capture/;
 
+export interface HookSpec {
+  event: string;
+  command: string;
+  timeout: number;
+  matcher?: string;
+}
+
 /**
- * Install a SessionEnd hook that auto-captures the just-ended session into memory.
- * Merges into existing settings without clobbering other hooks. Idempotent, and upgrades
- * capture hooks written by older versions in place.
+ * Add one hook to a Claude Code settings file, replacing any hook of ours for the same event
+ * (including ones written by older versions) and leaving every other hook and setting alone.
+ * Idempotent.
  */
-export function ensureSessionEndHook(settingsPath: string): void {
+export function ensureHook(settingsPath: string, spec: HookSpec): void {
   const settings: any = {};
   if (fs.existsSync(settingsPath)) {
     try {
@@ -54,21 +65,51 @@ export function ensureSessionEndHook(settingsPath: string): void {
   }
 
   if (!settings.hooks) settings.hooks = {};
-  if (!Array.isArray(settings.hooks.SessionEnd)) settings.hooks.SessionEnd = [];
+  if (!Array.isArray(settings.hooks[spec.event])) settings.hooks[spec.event] = [];
 
-  const isOurs = (h: any) => typeof h?.command === 'string' && CAPTURE_HOOK_PATTERN.test(h.command);
-  settings.hooks.SessionEnd = settings.hooks.SessionEnd.flatMap((group: any) => {
+  const ours = spec.event === 'SessionEnd'
+    ? CAPTURE_HOOK_PATTERN
+    : new RegExp(`claude-session-memory\\S*\\s+hook\\s+${spec.event}\\b`);
+  const isOurs = (h: any) => typeof h?.command === 'string' && ours.test(h.command);
+  settings.hooks[spec.event] = settings.hooks[spec.event].flatMap((group: any) => {
     if (!Array.isArray(group?.hooks) || !group.hooks.some(isOurs)) return [group];
     const rest = group.hooks.filter((h: any) => !isOurs(h));
     return rest.length > 0 ? [{ ...group, hooks: rest }] : [];
   });
 
-  settings.hooks.SessionEnd.push({
-    hooks: [{ type: 'command', command: CAPTURE_COMMAND, timeout: CAPTURE_HOOK_TIMEOUT_SEC }],
-  });
+  const group: any = { hooks: [{ type: 'command', command: spec.command, timeout: spec.timeout }] };
+  if (spec.matcher) group.matcher = spec.matcher;
+  settings.hooks[spec.event].push(group);
 
   fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
   fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n');
+}
+
+/**
+ * Install a SessionEnd hook that auto-captures the just-ended session into memory.
+ */
+export function ensureSessionEndHook(settingsPath: string): void {
+  ensureHook(settingsPath, { event: 'SessionEnd', command: CAPTURE_COMMAND, timeout: CAPTURE_HOOK_TIMEOUT_SEC });
+}
+
+const hookCommand = (event: string) => `npx -y claude-session-memory hook ${event}`;
+
+/** Hooks that push decisions into Claude's context. UserPromptSubmit is opt-in (it runs on every prompt). */
+export function pushHookSpecs(opts: { promptRecall: boolean }): HookSpec[] {
+  const specs: HookSpec[] = [
+    { event: 'SessionStart', command: hookCommand('SessionStart'), timeout: 15 },
+    { event: 'PreToolUse', command: hookCommand('PreToolUse'), timeout: 15, matcher: 'Edit|Write|MultiEdit|NotebookEdit' },
+    { event: 'PreCompact', command: hookCommand('PreCompact'), timeout: 15 },
+    { event: 'PostCompact', command: hookCommand('PostCompact'), timeout: 15 },
+  ];
+  if (opts.promptRecall) {
+    specs.push({ event: 'UserPromptSubmit', command: hookCommand('UserPromptSubmit'), timeout: 20 });
+  }
+  return specs;
+}
+
+export function installPushHooks(settingsPath: string, opts: { promptRecall: boolean }): void {
+  for (const spec of pushHookSpecs(opts)) ensureHook(settingsPath, spec);
 }
 
 /** Registers a user-scope MCP server. Injectable so tests don't touch the real Claude config. */
@@ -166,6 +207,18 @@ export function runInit(projectRoot: string, options: InitOptions): void {
     ? path.join(claudeDir, 'settings.json')
     : path.join(homeDir(), '.claude', 'settings.json');
   ensureSessionEndHook(hookSettingsPath);
+
+  // 4c. Hooks that push decisions into context (session start, before edits, around compaction).
+  const promptRecall = options.promptRecall ?? false;
+  if (options.pushHooks ?? true) {
+    installPushHooks(hookSettingsPath, { promptRecall });
+  }
+  const settingsDb = initDatabase(dbPath);
+  settingsDb.prepare(`
+    INSERT INTO settings (key, value) VALUES ('prompt_recall', ?)
+    ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
+  `).run(promptRecall ? 'on' : 'off');
+  settingsDb.close();
 
   // 5. Create memory-instructions.md
   const templatePath = path.join(__dirname, '..', 'templates', 'memory-instructions.md');
@@ -382,6 +435,8 @@ program
   .description('Initialize project memory in the current project')
   .option('--force', 'Force reinitialize even if already set up', false)
   .option('--scope <scope>', 'MCP registration scope: project or global')
+  .option('--no-push-hooks', 'Do not install the hooks that inject decisions into Claude\'s context')
+  .option('--prompt-recall', 'Also recall decisions on every prompt (needs the local embedding model)', false)
   .action(async (opts) => {
     const projectRoot = findProjectRoot();
     let scope = opts.scope;
@@ -395,7 +450,12 @@ program
     }
 
     try {
-      runInit(projectRoot, { scope, force: opts.force });
+      runInit(projectRoot, {
+        scope,
+        force: opts.force,
+        pushHooks: opts.pushHooks,
+        promptRecall: opts.promptRecall,
+      });
       console.log('\nProject memory initialized successfully!');
       console.log(`  Database: ${path.join(projectRoot, '.claude', 'project-memory.db')}`);
       console.log(`  MCP config: ${scope === 'project' ? '.mcp.json' : 'user scope (claude mcp list)'}`);
@@ -551,6 +611,24 @@ program
       console.error(`Error: ${(error as Error).message}`);
       process.exit(1);
     }
+  });
+
+program
+  .command('hook <event>')
+  .description('Claude Code hook entry point: reads the hook payload on stdin, prints context for Claude (called by hooks, not by hand)')
+  .option('--foreground', 'Run PostCompact extraction in this process instead of a detached worker')
+  .action(async (event: string, opts) => {
+    // Hooks must never break or slow a session: any failure prints nothing and exits 0.
+    try {
+      const { runHook, HOOK_EVENTS } = await import('./hooks.js');
+      if (!(HOOK_EVENTS as string[]).includes(event)) return;
+      const chunks: Buffer[] = [];
+      if (!process.stdin.isTTY) for await (const chunk of process.stdin) chunks.push(chunk as Buffer);
+      const raw = Buffer.concat(chunks).toString('utf-8').trim();
+      const payload = raw ? JSON.parse(raw) : {};
+      const out = await runHook(event as any, payload, { foreground: opts.foreground });
+      if (out) process.stdout.write(out + '\n');
+    } catch { /* silent by design */ }
   });
 
 program

@@ -30,10 +30,19 @@ Use the `save_decision` MCP tool with these fields:
 - "What files are affected by the auth decision?"
 - "Compare Pinia vs Vuex"
 
-## Session Start
+## Decisions Loaded For You
 
-Call `get_stats` at the beginning of each session.
-It shows: statistics, last session context, decisions relevant to current work, ROI metrics.
+Hooks put the decisions that matter into your context automatically:
+- At session start (and after compaction): the ones relevant to the branch and uncommitted files.
+- Before you edit a file: the ones recorded for that file. Respect them, and say so if a change would contradict one.
+
+Each line carries an `#id`. Call `get_decisions` with those ids for the full rationale,
+alternatives and consequences. `get_stats` still shows statistics and ROI when you want them.
+
+## Searching
+
+`query_memory` returns one line per match (id, title, decision). Call `get_decisions`
+with the ids you need, or pass `detail: "full"` when you want complete records up front.
 
 ## Session End
 

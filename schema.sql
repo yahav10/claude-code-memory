@@ -89,5 +89,19 @@ CREATE TABLE IF NOT EXISTS query_log (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Decisions pushed into Claude's context by hooks (SessionStart / PreToolUse / UserPromptSubmit).
+-- UNIQUE(session_id, decision_id, event) is the dedup: each hook shows a decision once per context,
+-- but a decision already shown at session start is still shown again right before an edit to its file.
+CREATE TABLE IF NOT EXISTS injection_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  session_id TEXT NOT NULL,
+  decision_id INTEGER NOT NULL,
+  event TEXT NOT NULL,
+  chars INTEGER DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (session_id, decision_id, event)
+);
+
+CREATE INDEX IF NOT EXISTS idx_injection_log_created ON injection_log(created_at);
 CREATE INDEX IF NOT EXISTS idx_query_log_session ON query_log(session_id);
 CREATE INDEX IF NOT EXISTS idx_query_log_created ON query_log(created_at);
