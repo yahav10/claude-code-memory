@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import { spawnSync } from 'node:child_process';
 import {
   runInit,
   ensureHook,
@@ -149,7 +150,7 @@ describe('push hooks', () => {
     expect(events()).toEqual(['PostCompact', 'PreCompact', 'PreToolUse', 'SessionStart']);
     const pre = readJson(settingsPath).hooks.PreToolUse[0];
     expect(pre.matcher).toBe('Edit|Write|MultiEdit|NotebookEdit');
-    expect(pre.hooks[0].command).toBe('npx -y claude-session-memory hook PreToolUse');
+    expect(pre.hooks[0].command).toContain('claude-session-memory hook PreToolUse');
   });
 
   it('adds the per-prompt hook only when asked', () => {
@@ -187,6 +188,33 @@ describe('push hooks', () => {
     expect(() => installPushHooks(settingsPath, { promptRecall: false })).toThrow(/settings\.json|could not parse/i);
     expect(() => ensureSessionEndHook(settingsPath)).toThrow();
     expect(fs.readFileSync(settingsPath, 'utf-8')).toBe(broken);
+  });
+
+  describe('hook command launcher', () => {
+    const run = (path_: string, stdin: string) => {
+      installPushHooks(settingsPath, { promptRecall: false });
+      const cmd = readJson(settingsPath).hooks.PreToolUse[0].hooks[0].command as string;
+      return spawnSync('/bin/sh', ['-c', cmd], { input: stdin, env: { PATH: path_ }, encoding: 'utf-8' });
+    };
+    const fakeBin = (dir: string, name: string, body: string) => {
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.join(dir, name), `#!/bin/sh\n${body}\n`, { mode: 0o755 });
+    };
+
+    it('uses a globally installed claude-session-memory directly, passing the payload through', () => {
+      const bin = path.join(tmpDir, 'global-bin');
+      fakeBin(bin, 'claude-session-memory', 'echo "GLOBAL $@ $(cat)"');
+      fakeBin(bin, 'npx', 'echo NPX');
+      const res = run(`${bin}:/usr/bin:/bin`, 'payload-1');
+      expect(res.stdout.trim()).toBe('GLOBAL hook PreToolUse payload-1');
+    });
+
+    it('falls back to npx --prefer-offline when it is not installed globally', () => {
+      const bin = path.join(tmpDir, 'npx-only');
+      fakeBin(bin, 'npx', 'echo "NPX $@ $(cat)"');
+      const res = run(`${bin}:/usr/bin:/bin`, 'payload-2');
+      expect(res.stdout.trim()).toBe('NPX --prefer-offline -y claude-session-memory hook PreToolUse payload-2');
+    });
   });
 
   it('init installs push hooks and records the prompt-recall setting', () => {

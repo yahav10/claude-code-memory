@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2026-11-23
+
+### Changed
+- **Context hooks start much faster.** The hooks run on every file edit, and `npx -y` checked the registry each time (0.7 to 1.6s per edit). They now use a global `claude-session-memory` when one is on `PATH` (about 0.06s) and otherwise `npx --prefer-offline` (about 0.35s). No absolute paths are written, so committed project settings still work for teammates. Re-run `init` to upgrade existing hooks; `npm install -g claude-session-memory` gives the fastest start.
+
+### Fixed
+- `init` refuses to rewrite a `settings.json` it cannot parse (it used to overwrite it and drop the user's other settings).
+
 ## [0.5.0] - 2026-11-18
 
 ### Added

@@ -98,7 +98,11 @@ export function ensureSessionEndHook(settingsPath: string): void {
   ensureHook(settingsPath, { event: 'SessionEnd', command: CAPTURE_COMMAND, timeout: CAPTURE_HOOK_TIMEOUT_SEC });
 }
 
-const hookCommand = (event: string) => `npx -y claude-session-memory hook ${event}`;
+// Runs on every file edit, so it must be fast. A global install starts in ~50ms; plain `npx -y`
+// checks the registry on every call (~1.1-1.6s). --prefer-offline reuses the npx cache (~0.4-0.7s)
+// and still downloads when nothing is cached. No absolute paths: project settings are committed.
+const hookCommand = (event: string) =>
+  `command -v claude-session-memory >/dev/null 2>&1 && exec claude-session-memory hook ${event} || exec npx --prefer-offline -y claude-session-memory hook ${event}`;
 
 /** Hooks that push decisions into Claude's context. UserPromptSubmit is opt-in (it runs on every prompt). */
 export function pushHookSpecs(opts: { promptRecall: boolean }): HookSpec[] {
